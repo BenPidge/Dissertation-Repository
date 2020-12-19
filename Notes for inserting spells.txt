@@ -1,4 +1,7 @@
-Press run and enter 1 to enter spells.
+Load dndbeyond, sources, all spells. Press on advanced filters and choose Players Handbook under source.
+Press run and enter 1 to enter spells
+Look at the spells printed at the top of the code - they're printed alphabetically, so look for the 
+first spell on dndbeyond that it doesn't have, and start there.
 
 The spells range has to JUST be an integer, use 0 if it says 'self'.
 The area is normally in brackets after the range. Enter the value if it shows a circle, or the value
