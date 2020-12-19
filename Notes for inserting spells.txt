@@ -1,0 +1,18 @@
+Press run and enter 1 to enter spells.
+
+The spells range has to JUST be an integer, use 0 if it says 'self'.
+The area is normally in brackets after the range. Enter the value if it shows a circle, or the value
+and "ft cone" or "ft line", depending on the shape. if it has none, press enter with NO text(not even spaces)
+Make sure to look for dice, then enter it like "2d6 necrotic" for 2d6 of necrotic damage.
+For the description, do not include the spaces after the final fullstop. If a spell description has
+paragraphs, copy it line/paragraph by line, and write "\n" between each, with no spaces before or after.
+
+Only do the 1st level spells, in alphabetical order. As it's a database, there can be NO ERRORS AT ALL.
+Any small error could render a spell useless.
+Typing 'N' when it asks if you want another saves your progress, and the red square cancels without saving.
+I'd recommend pressing 'N' and rerunning every 3 or so spells so mistakes aren't too bad. If you make
+a mistake, press the red square, then the green triangle and re-enter any you did the last run.
+
+There's £5 for every 10 spells available, which gives you a potential £30 for all 1st level spells. 
+Please let me know when you're going to do some more so I don't edit the database at the same time and lose data -
+I cba setting up concurrent insertions. I'll show you how to send me the stuff but you can always just tell me.
