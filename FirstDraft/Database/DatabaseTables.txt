@@ -437,7 +437,7 @@ CREATE TABLE IF NOT EXISTS `BackgroundLanguage` (
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `Equipment` (
   `equipmentId` INT UNSIGNED NOT NULL,
-  `name` VARCHAR(45) NOT NULL,
+  `equipmentName` VARCHAR(45) NOT NULL,
   `tags` VARCHAR(45) NOT NULL,
   `description` MEDIUMTEXT NULL,
   `diceSides` INT UNSIGNED NULL,
@@ -487,6 +487,69 @@ CREATE TABLE IF NOT EXISTS `EquipmentIndivOption` (
     REFERENCES `EquipmentOption` (`equipOptionId`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
+
+
+-- -----------------------------------------------------
+-- Table `Archetype`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `Archetype` (
+  `archetypeId` INT UNSIGNED NOT NULL,
+  `archetypeName` VARCHAR(45) NOT NULL,
+  `description` VARCHAR(45) NOT NULL,
+  `magicWeighting` DECIMAL NOT NULL,
+  `healthWeighting` DECIMAL NOT NULL,
+  PRIMARY KEY (`archetypeId`))
+
+
+-- -----------------------------------------------------
+-- Table `ArchetypeTag`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `ArchetypeTag` (
+  `archetypeId` INT UNSIGNED NOT NULL,
+  `tagId` INT UNSIGNED NOT NULL,
+  `weighting` DECIMAL NOT NULL,
+  PRIMARY KEY (`archetypeId`, `tagId`),
+  CONSTRAINT `archetypeId`
+    FOREIGN KEY (`archetypeId`)
+    REFERENCES `Archetype` (`archetypeId`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `tagId`
+    FOREIGN KEY (`tagId`)
+    REFERENCES `Tag` (`tagId`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+
+
+-- -----------------------------------------------------
+-- Table `Tag`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `Tag` (
+  `tagId` INT UNSIGNED NOT NULL,
+  `tagName` VARCHAR(45) NOT NULL,
+  `tagSubgroup` VARCHAR(45) NOT NULL,
+  PRIMARY KEY (`tagId`))
+
+
+-- -----------------------------------------------------
+-- Table `TagProficiency`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `TagProficiency` (
+  `tagId` INT UNSIGNED NOT NULL,
+  `proficiencyId` INT UNSIGNED NOT NULL,
+  PRIMARY KEY (`tagId`, `proficiencyId`),
+  CONSTRAINT `tagId`
+    FOREIGN KEY (`tagId`)
+    REFERENCES `Tag` (`tagId`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `proficiencyId`
+    FOREIGN KEY (`proficiencyId`)
+    REFERENCES `Proficiency` (`proficiencyId`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+
+
 
 SET SQL_MODE=@OLD_SQL_MODE;
 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;

@@ -7,6 +7,9 @@ class DatabaseSetup:
 
     @staticmethod
     def setup_tables():
+        """
+        Sets up all the database tables by running through the text file.
+        """
         count = 0
         nextCommand = ""
 
@@ -27,11 +30,21 @@ class DatabaseSetup:
 
     @staticmethod
     def complete_setup():
+        """
+        Commits and closes the database connection, ensuring all edits are saved.
+        :return:
+        """
         DatabaseSetup.connection.commit()
         DatabaseSetup.connection.close()
 
     @staticmethod
     def int_input(prompt):
+        """
+        Repeatedly asks for an input until an integer is entered.
+        :param prompt: the question an input is required for
+        :type prompt: str
+        :return: the integer input
+        """
         output = None
         while output is None:
             try:
@@ -42,6 +55,10 @@ class DatabaseSetup:
 
     @staticmethod
     def add_another_item():
+        """
+        Asks the user if they want to add another item, until 'Y' or 'N' are entered.
+        :return: a boolean stating whether they want to add another item
+        """
         addMore = True
         repeat = True
         while repeat:
@@ -55,6 +72,15 @@ class DatabaseSetup:
 
 
     def remove_item(self, table, item_id=None, name=None):
+        """
+        Removes an item from a table, based on their name or id.
+        :param table: the table to remove the item from
+        :type table: str
+        :param item_id: the id of the item to remove
+        :type item_id: str
+        :param name: the name of the item to remove
+        :type name: str
+        """
         if item_id is None:
             sqlCall = "DELETE FROM " + table + " WHERE " + table.lower() + "Name=" + name
         else:
@@ -62,6 +88,10 @@ class DatabaseSetup:
         self.cursor.execute(sqlCall)
 
     def add_item(self):
+        """
+        Produces a simple text menu to allow the user to select which kind of item they wish to add.
+        This is used for simple navigation during the database filling process.
+        """
         print("Choose one of the options below to add, or 9 to exit:\n"
               "1. Spells\n"
               "2. Languages\n"
@@ -81,6 +111,11 @@ class DatabaseSetup:
             SystemExit(0)
 
     def print_added_data(self):
+        """
+        Prints all the currently added data, in long strings that start with the data groups. For example, a line
+        beginning with 'Spells:' shows all the names of spells that have been added.
+        This is used for consistency and checkup during the database filling process.
+        """
         self.cursor.execute("SELECT spellName FROM Spell")
         spells = sorted(self.cursor.fetchall())
         spellStr = ""
@@ -109,11 +144,27 @@ class DatabaseSetup:
             equipStr += equip[0] + ", "
         print("Equipment: " + equipStr)
 
+    def get_id(self, name, table):
+        """
+        Gets the id of a row from their table and name.
+        :param name: the name of the row to be found
+        :type name: str
+        :param table: the table the row is located in
+        :type table: str
+        :return: the integer value of the data's id
+        """
+        self.cursor.execute(
+            "SELECT " + table.lower() + "Id from " + table + " WHERE " + table.lower() + "Name='" + name + "'")
+        return int(self.cursor.fetchone()[0])
 
 
-    # SPELLS METHODS
+
+    # ADD NON-CONNECTED ROWS
 
     def add_spells(self):
+        """
+        Adds one or more spells to the database.
+        """
         self.cursor.execute("SELECT COUNT(*) FROM Spell")
         spellId = self.cursor.fetchone()[0]
         addMore = True
@@ -138,6 +189,33 @@ class DatabaseSetup:
 
     def add_spell(self, spell_id, name, level, casting_time, duration, spell_range, components, attack_or_save,
                   school, damage_or_effect, description, area):
+        """
+        Adds a single spell to the database, adjusting the call based on available data.
+        :param spell_id: The unique id of the next spell
+        :type spell_id: str
+        :param name: The spells name
+        :type name: str
+        :param level: the minimum level that the spell can be cast at
+        :type level: str
+        :param casting_time: the casting time of the spell
+        :type casting_time: str
+        :param duration: the duration the spell lasts for
+        :type duration: str
+        :param spell_range: the range of the spell
+        :type spell_range: str
+        :param components: the components used to cast the spell
+        :type components: str
+        :param attack_or_save: the attack roll or save type of the spell
+        :type attack_or_save: str
+        :param school: the school the spell is a member of
+        :type school: str
+        :param damage_or_effect: the damage amount and type, as well as spell tags
+        :type damage_or_effect: str
+        :param description: the description of how the spell works
+        :type description: str
+        :param area: the area and size kind of the spell
+        :type area: str
+        """
         insertCall1 = "INSERT INTO Spell(spellId, spellName, spellLevel, castingTime, duration, range, area, " \
                       "components, attackOrSave, school, damageOrEffect, description) " \
                       "VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
@@ -153,11 +231,10 @@ class DatabaseSetup:
                                               spell_range, components, attack_or_save, school,
                                               damage_or_effect, description))
 
-
-
-    # ADD SIMPLE ROWS
-
     def add_proficiencies(self):
+        """
+        Adds one or more proficiencies to the database.
+        """
         self.cursor.execute("SELECT COUNT(*) FROM Proficiency")
         proficiencyId = self.cursor.fetchone()[0]
         addMore = True
@@ -172,6 +249,9 @@ class DatabaseSetup:
             addMore = self.add_another_item()
 
     def add_languages(self):
+        """
+        Adds one or more languages to the database.
+        """
         self.cursor.execute("SELECT COUNT(*) FROM Language")
         languageId = self.cursor.fetchone()[0]
         addMore = True
@@ -183,6 +263,9 @@ class DatabaseSetup:
             addMore = self.add_another_item()
 
     def add_equipment(self):
+        """
+        Adds one or more pieces of equipment to the database.
+        """
         self.cursor.execute("SELECT COUNT(*) FROM Equipment")
         equipmentId = self.cursor.fetchone()[0]
         addMore = True
