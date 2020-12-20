@@ -78,7 +78,7 @@ class DatabaseSetup:
         elif value == 4:
             self.add_equipment()
         else:
-            SystemExit
+            SystemExit(0)
 
     def print_added_data(self):
         self.cursor.execute("SELECT spellName FROM Spell")
