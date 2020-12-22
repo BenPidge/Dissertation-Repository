@@ -453,11 +453,12 @@ CREATE TABLE IF NOT EXISTS `Equipment` (
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `EquipmentOption` (
   `equipOptionId` INT UNSIGNED NOT NULL,
-  `classId` INT UNSIGNED NOT NULL,
+  `classId` INT UNSIGNED NULL,
+  `backgroundId` INT UNSIGNED NULL,
   `hasChoice` TINYINT(1) NULL,
   `suboption` INT UNSIGNED NULL,
-  PRIMARY KEY (`equipOptionId`, `classId`),
-    CONSTRAINT `classId`
+  PRIMARY KEY (`equipOptionId`),
+  CONSTRAINT `classId`
     FOREIGN KEY (`classId`)
     REFERENCES `Class` (`classId`)
     ON DELETE NO ACTION
@@ -465,6 +466,11 @@ CREATE TABLE IF NOT EXISTS `EquipmentOption` (
   CONSTRAINT `suboption`
     FOREIGN KEY (`suboption`)
     REFERENCES `EquipmentOption` (`equipOptionId`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `backgroundId`
+    FOREIGN KEY (`backgroundId`)
+    REFERENCES `Background` (`backgroundId`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 

@@ -97,6 +97,7 @@ class DatabaseSetup:
               "2. Languages\n"
               "3. Proficiencies\n"
               "4. Equipment\n"
+              "5. Background\n"
               "9. Exit\n")
         value = self.int_input("> ")
         if value == 1:
@@ -107,6 +108,8 @@ class DatabaseSetup:
             self.add_proficiencies()
         elif value == 4:
             self.add_equipment()
+        elif value == 5:
+            self.add_background()
         else:
             SystemExit(0)
 
@@ -144,6 +147,13 @@ class DatabaseSetup:
             equipStr += equip[0] + ", "
         print("Equipment: " + equipStr)
 
+        self.cursor.execute("SELECT backgroundName FROM Background")
+        background = sorted(self.cursor.fetchall())
+        backgroundStr = ""
+        for bg in background:
+            backgroundStr += bg[0] + ", "
+        print("Backgrounds: " + backgroundStr)
+
     def get_id(self, name, table):
         """
         Gets the id of a row from their table and name.
@@ -153,9 +163,155 @@ class DatabaseSetup:
         :type table: str
         :return: the integer value of the data's id
         """
+        name = name.replace("'", "''")
         self.cursor.execute(
             "SELECT " + table.lower() + "Id from " + table + " WHERE " + table.lower() + "Name='" + name + "'")
         return int(self.cursor.fetchone()[0])
+
+
+
+    # ADD CONNECTED ROWS
+
+    def add_equipment_option(self, connector_type, connector_id):
+        """
+        Creates a row for EquipmentOption, and any rows needed to satisfy it.
+        :param connector_type: states whether the row connects to a class, background or another EquipmentOption.
+                                It's inputs are 'class', 'background' or 'equipment option'
+        :type connector_type: str
+        :param connector_id: the id of the class or background it connects to
+        :type connector_id: int
+        """
+        self.cursor.execute("SELECT COUNT(*) FROM EquipmentOption")
+        equipmentOptionId = self.cursor.fetchone()[0]
+        addMore = True
+        while addMore:
+            equipmentOptionId += 1
+            hasChoice = None
+            while hasChoice is None:
+                response = input("Does this option involve a choice? (Y/N) ")
+                if response == "Y":
+                    hasChoice = 1
+                elif response == "N":
+                    hasChoice = 0
+
+            # makes the appropriate SQL call, based on the type of connector
+            if connector_type == "equipment option":
+                self.cursor.execute("INSERT INTO EquipmentOption(equipOptionId, suboption, hasChoice) VALUES (?, ?, ?)",
+                                    (equipmentOptionId, connector_id, hasChoice))
+            else:
+                self.cursor.execute("INSERT INTO EquipmentOption(equipOptionId, " + connector_type + "Id, hasChoice) "
+                                                                                                     "VALUES (?, ?, ?)",
+                                    (equipmentOptionId, connector_id, hasChoice))
+
+            # adds the options attached to this
+            isTagBased = input("Are the items connected to this item specific or any from a tag? (specific/tag) ")
+
+            # adds all items from a tag
+            if isTagBased == "tag":
+                tag = input("Enter the next items to add, by their common tag: ")
+                amount = self.int_input("Enter how much of this item they get: ")
+                self.cursor.execute("SELECT equipmentId FROM Equipment WHERE tags LIKE '%" + tag + "%'")
+                results = self.cursor.fetchall()
+                for x in range(0, len(results)):
+                    self.cursor.execute("INSERT INTO EquipmentIndivOption(equipmentId, equipmentOptionId, amnt) "
+                                        "VALUES (?, ?, ?)", (results[x][0], equipmentOptionId, amount))
+                # results currently will be something like [(1,), (4,)]
+
+            # adds one or more specific items
+            else:
+                moreEquipment = True
+                while moreEquipment:
+                    isRecursive = input("Does the next option to add involve a choice or multiple items? (Y/N) ")
+                    if isRecursive == "Y":
+                        self.add_equipment_option(connector_type, equipmentOptionId)
+                    else:
+
+                        name = input("Enter the next item to add, by it's equipment name: ")
+                        amount = self.int_input("Enter how much of this item they get: ")
+                        self.cursor.execute("INSERT INTO EquipmentIndivOption(equipmentId, equipmentOptionId, amnt) "
+                                            "VALUES (?, ?, ?)", (self.get_id(name, "Equipment"), equipmentOptionId, amount))
+                    moreEquipment = self.add_another_item()
+
+            print("Your most recently started EquipmentOption is now complete.")
+            addMore = self.add_another_item()
+
+    def add_background(self):
+        """
+        Adds one or more backgrounds to the database.
+        """
+        self.cursor.execute("SELECT COUNT(*) FROM Background")
+        backgroundId = self.cursor.fetchone()[0]
+        addMore = True
+        while addMore:
+            backgroundId += 1
+            name = input("Enter the background's name: ")
+            skillAmnt = self.int_input("Enter how many skills the character gets: ")
+            toolAmnt = self.int_input("Enter how many tools the character gets: ")
+            languageAmnt = self.int_input("Enter how many languages the character gets: ")
+            self.cursor.execute(
+                "INSERT INTO Background(backgroundId, backgroundName, skillAmnt, toolAmnt, languageAmnt) "
+                "VALUES(?, ?, ?, ?, ?);", (backgroundId, name, skillAmnt, toolAmnt, languageAmnt))
+
+            self.add_background_connections(backgroundId, skillAmnt, languageAmnt, toolAmnt)
+            self.add_equipment_option("background", backgroundId)
+
+            print("The background and connections have now been added.")
+            addMore = self.add_another_item()
+
+    def add_background_connections(self, background_id, skill_amnt, language_amnt, tool_amnt):
+        """
+        Adds appropriate rows into all tables that connect to a background, bar EquipmentOptions.
+        :param background_id: the id of the current background being added
+        :type background_id: int
+        :param skill_amnt: the amount of skills the user chooses from the background
+        :type skill_amnt: int
+        :param language_amnt: the amount of languages the user chooses from the background
+        :type language_amnt: int
+        :param tool_amnt: the amount of tools the user chooses from the background
+        :type tool_amnt: int
+        """
+        addSkill = (skill_amnt > 0)
+        while addSkill:
+            skillName = input("Enter the name of the next skill the background offers, or 'ALL' for all: ")
+            if skillName == "ALL":
+                self.cursor.execute("SELECT proficiencyId FROM Proficiency WHERE proficiencyType='Skill'")
+                results = self.cursor.fetchall()
+                for x in range(0, len(results)):
+                    self.cursor.execute("INSERT INTO BackgroundProficiency(backgroundId, proficiencyId) "
+                                        "VALUES (?, ?)", (background_id, results[x][0]))
+            else:
+                self.cursor.execute("INSERT INTO BackgroundProficiency(backgroundId, proficiencyId) VALUES(?, ?);",
+                                    (background_id, self.get_id(skillName, "Proficiency")))
+            addSkill = self.add_another_item()
+
+        addLang = (language_amnt > 0)
+        while addLang:
+            langName = input("Enter the name of the next language the background offers, or 'ALL' for all: ")
+            if langName == "ALL":
+                self.cursor.execute("SELECT languageId FROM Language")
+                results = self.cursor.fetchall()
+                for x in range(0, len(results)):
+                    self.cursor.execute("INSERT INTO BackgroundLanguage(backgroundId, languageId) "
+                                        "VALUES (?, ?)", (background_id, results[x][0]))
+            else:
+                self.cursor.execute("INSERT INTO BackgroundLanguage(backgroundId, languageId) VALUES(?, ?);",
+                                    (background_id, self.get_id(langName, "Language")))
+            addLang = self.add_another_item()
+
+        addTool = (tool_amnt > 0)
+        while addTool:
+            toolName = input("Enter the name of the next tool the background offers, or 'ALL' for all: ")
+            if toolName == "ALL":
+                self.cursor.execute("SELECT proficiencyId FROM Proficiency WHERE proficiencyType='Tool'")
+                results = self.cursor.fetchall()
+                for x in range(0, len(results)):
+                    self.cursor.execute("INSERT INTO BackgroundProficiency(backgroundId, proficiencyId) "
+                                        "VALUES (?, ?)", (background_id, results[x][0]))
+            else:
+                self.cursor.execute("INSERT INTO BackgroundProficiency(backgroundId, proficiencyId) VALUES(?, ?);",
+                                    (background_id, self.get_id(toolName, "Proficiency")))
+            addTool = self.add_another_item()
+
 
 
 
@@ -196,13 +352,13 @@ class DatabaseSetup:
         :param name: The spells name
         :type name: str
         :param level: the minimum level that the spell can be cast at
-        :type level: str
+        :type level: imt
         :param casting_time: the casting time of the spell
         :type casting_time: str
         :param duration: the duration the spell lasts for
         :type duration: str
         :param spell_range: the range of the spell
-        :type spell_range: str
+        :type spell_range: imt
         :param components: the components used to cast the spell
         :type components: str
         :param attack_or_save: the attack roll or save type of the spell
