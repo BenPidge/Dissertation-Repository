@@ -196,6 +196,7 @@ class DatabaseSetup:
 
             # makes the appropriate SQL call, based on the type of connector
             if connector_type == "equipment option":
+                # noinspection SpellCheckingInspection
                 self.cursor.execute("INSERT INTO EquipmentOption(equipOptionId, suboption, hasChoice) VALUES (?, ?, ?)",
                                     (equipmentOptionId, connector_id, hasChoice))
             else:
@@ -210,7 +211,8 @@ class DatabaseSetup:
             if isTagBased == "tag":
                 tag = input("Enter the next items to add, by their common tag: ")
                 amount = self.int_input("Enter how much of this item they get: ")
-                self.cursor.execute("SELECT equipmentId FROM Equipment WHERE tags LIKE '%" + tag + "%'")
+                self.cursor.execute("SELECT equipmentId FROM Equipment WHERE tags LIKE '%" +
+                                    tag.replace("'", "''") + "%'")
                 results = self.cursor.fetchall()
                 for x in range(0, len(results)):
                     self.cursor.execute("INSERT INTO EquipmentIndivOption(equipmentId, equipmentOptionId, amnt) "
@@ -229,7 +231,8 @@ class DatabaseSetup:
                         name = input("Enter the next item to add, by it's equipment name: ")
                         amount = self.int_input("Enter how much of this item they get: ")
                         self.cursor.execute("INSERT INTO EquipmentIndivOption(equipmentId, equipmentOptionId, amnt) "
-                                            "VALUES (?, ?, ?)", (self.get_id(name, "Equipment"), equipmentOptionId, amount))
+                                            "VALUES (?, ?, ?)",
+                                            (self.get_id(name, "Equipment"), equipmentOptionId, amount))
                     moreEquipment = self.add_another_item()
 
             print("Your most recently started EquipmentOption is now complete.")
@@ -272,13 +275,20 @@ class DatabaseSetup:
         """
         addSkill = (skill_amnt > 0)
         while addSkill:
-            skillName = input("Enter the name of the next skill the background offers, or 'ALL' for all: ")
+            skillName = input("Enter the name of the next skill the background offers, 'ALL' for all or 'TAG' "
+                              "followed by the tag for a subgroup: ")
             if skillName == "ALL":
                 self.cursor.execute("SELECT proficiencyId FROM Proficiency WHERE proficiencyType='Skill'")
                 results = self.cursor.fetchall()
                 for x in range(0, len(results)):
                     self.cursor.execute("INSERT INTO BackgroundProficiency(backgroundId, proficiencyId) "
                                         "VALUES (?, ?)", (background_id, results[x][0]))
+            elif skillName[0:3] == "TAG":
+                self.cursor.execute("SELECT proficiencyId FROM Proficiency WHERE proficiencyType LIKE '%" +
+                                    skillName[4:].replace("'", "''") + "%'")
+                for result in self.cursor.fetchall():
+                    self.cursor.execute("INSERT INTO BackgroundProficiency(backgroundId, proficiencyId) VALUES(?, ?);",
+                                        (background_id, result[0]))
             else:
                 self.cursor.execute("INSERT INTO BackgroundProficiency(backgroundId, proficiencyId) VALUES(?, ?);",
                                     (background_id, self.get_id(skillName, "Proficiency")))
@@ -286,7 +296,7 @@ class DatabaseSetup:
 
         addLang = (language_amnt > 0)
         while addLang:
-            langName = input("Enter the name of the next language the background offers, or 'ALL' for all: ")
+            langName = input("Enter the name of the next language the background offers or 'ALL' for all: ")
             if langName == "ALL":
                 self.cursor.execute("SELECT languageId FROM Language")
                 results = self.cursor.fetchall()
@@ -300,13 +310,20 @@ class DatabaseSetup:
 
         addTool = (tool_amnt > 0)
         while addTool:
-            toolName = input("Enter the name of the next tool the background offers, or 'ALL' for all: ")
+            toolName = input("Enter the name of the next tool the background offers, 'ALL' for all or 'TAG' "
+                             "followed by the tag for a subgroup: ")
             if toolName == "ALL":
                 self.cursor.execute("SELECT proficiencyId FROM Proficiency WHERE proficiencyType='Tool'")
                 results = self.cursor.fetchall()
                 for x in range(0, len(results)):
                     self.cursor.execute("INSERT INTO BackgroundProficiency(backgroundId, proficiencyId) "
                                         "VALUES (?, ?)", (background_id, results[x][0]))
+            elif toolName[0:3] == "TAG":
+                self.cursor.execute("SELECT proficiencyId FROM Proficiency WHERE proficiencyType LIKE '%" +
+                                    toolName[4:].replace("'", "''") + "%'")
+                for result in self.cursor.fetchall():
+                    self.cursor.execute("INSERT INTO BackgroundProficiency(backgroundId, proficiencyId) VALUES(?, ?);",
+                                        (background_id, result[0]))
             else:
                 self.cursor.execute("INSERT INTO BackgroundProficiency(backgroundId, proficiencyId) VALUES(?, ?);",
                                     (background_id, self.get_id(toolName, "Proficiency")))
@@ -456,4 +473,3 @@ class DatabaseSetup:
             self.cursor.execute(sqlCall, sqlParams)
 
             addMore = self.add_another_item()
-
