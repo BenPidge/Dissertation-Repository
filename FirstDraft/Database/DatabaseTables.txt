@@ -175,7 +175,6 @@ CREATE TABLE IF NOT EXISTS `RaceSpell` (
   `spellLevel` INT UNSIGNED NULL,
   `characterLevel` INT UNSIGNED NULL,
   `modifierUsed` VARCHAR(45) NULL,
-  `lvlRequired` INT UNSIGNED NULL,
   PRIMARY KEY (`raceOptionsId`, `spellId`),
     CONSTRAINT `raceOptionsId`
     FOREIGN KEY (`raceOptionsId`)
@@ -199,6 +198,22 @@ CREATE TABLE IF NOT EXISTS `Trait` (
   `traitTag` VARCHAR(45) NOT NULL,
   `traitTagValue` INT NULL,
   PRIMARY KEY (`traitId`))
+
+
+-- -----------------------------------------------------
+-- Table `TraitOption`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `TraitOption` (
+  `traitOptionId` INT UNSIGNED NOT NULL,
+  `traitId` INT UNSIGNED NOT NULL,
+  `optionDesc` MEDIUMTEXT NOT NULL,
+  `optionVal` INT NULL,
+  PRIMARY KEY (`traitOptionId`)
+  CONSTRAINT `traitId`
+    FOREIGN KEY (`traitId`)
+    REFERENCES `Trait` (`traitId`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
 
 
 -- -----------------------------------------------------
