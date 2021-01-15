@@ -250,6 +250,7 @@ CREATE TABLE IF NOT EXISTS `Class` (
   `primaryAbility` VARCHAR(45) NOT NULL,
   `secondaryAbility` VARCHAR(45) NOT NULL,
   `isMagical` TINYINT(1) NOT NULL,
+  `savingThrows` VARCHAR(45) NOT NULL,
   PRIMARY KEY (`classId`)
   )
 
@@ -259,11 +260,12 @@ CREATE TABLE IF NOT EXISTS `Class` (
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `Subclass` (
   `subclassId` INT UNSIGNED NOT NULL,
-  `classOptionsId` INT UNSIGNED NOT NULL,
-  PRIMARY KEY (`subclassId`, `classOptionsId`),
-    CONSTRAINT `classOptionsId`
-    FOREIGN KEY (`classOptionsId`)
-    REFERENCES `ClassOptions` (`classOptionsId`)
+  `subclassName` VARCHAR(45) NOT NULL,
+  `classId` INT UNSIGNED NOT NULL,
+  PRIMARY KEY (`subclassId`),
+  CONSTRAINT `classId`
+    FOREIGN KEY (`classId`)
+    REFERENCES `Class` (`classId`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 
@@ -296,6 +298,7 @@ CREATE TABLE IF NOT EXISTS `ClassOptions` (
 CREATE TABLE IF NOT EXISTS `ClassProficiency` (
   `classOptionsId` INT UNSIGNED NOT NULL,
   `proficiencyId` INT UNSIGNED NOT NULL,
+  `expertise` TINYINT(1) NULL,
   PRIMARY KEY (`classOptionsId`, `proficiencyId`),
     CONSTRAINT `classOptionsId`
     FOREIGN KEY (`classOptionsId`)
@@ -319,9 +322,16 @@ CREATE TABLE IF NOT EXISTS `ClassMagic` (
   `knownCalc` VARCHAR(45) NOT NULL,
   `amntKnown` INT UNSIGNED NULL,
   `lvl` INT UNSIGNED NOT NULL,
+  `cantripsKnown` INT UNSIGNED NULL,
+  `subclassId` INT UNSIGNED NULL,
   PRIMARY KEY (`magicId`, `classId`),
     FOREIGN KEY (`classId`)
     REFERENCES `Class` (`classId`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION
+  CONSTRAINT `subclassId`
+    FOREIGN KEY (`subclassId`)
+    REFERENCES `Subclass` (`subclassId`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 
@@ -349,16 +359,16 @@ CREATE TABLE IF NOT EXISTS `ClassSpell` (
 -- Table `ClassLanguage`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `ClassLanguage` (
-  `classId` INT UNSIGNED NOT NULL,
-  `languageId` INT UNSIGNED NOT NULL,
-  PRIMARY KEY (`classId`, `languageId`),
-    CONSTRAINT `classId`
-    FOREIGN KEY (`classId`)
-    REFERENCES `Class` (`classId`)
+  `classOptionsId` INT UNSIGNED NOT NULL,
+  `language` INT UNSIGNED NOT NULL,
+  PRIMARY KEY (`classOptionsId`, `language`),
+    CONSTRAINT `classOptionsId`
+    FOREIGN KEY (`classOptionsId`)
+    REFERENCES `ClassOptions` (`classOptionsId`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `languageId`
-    FOREIGN KEY (`languageId`)
+    FOREIGN KEY (`language`)
     REFERENCES `Language` (`languageId`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
