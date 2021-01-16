@@ -5,6 +5,8 @@ class DatabaseSetup:
     connection = sql.connect("Database/ChrDatabase.db")
     cursor = connection.cursor()
 
+    # CORE STATIC COMMANDS
+
     @staticmethod
     def setup_tables():
         """
@@ -71,7 +73,7 @@ class DatabaseSetup:
 
 
 
-    # CORE COMMANDS
+    # CORE NON-STATIC COMMANDS
 
     def remove_item(self, table, item_id=None, name=None):
         """
@@ -151,12 +153,14 @@ class DatabaseSetup:
         :param plural: the plural text of the tables' content
         :type plural: str
         """
+        self.cursor.execute("SELECT COUNT(*) FROM " + table)
+        amount = self.cursor.fetchone()[0]
         self.cursor.execute("SELECT " + table.lower() + "Name FROM " + table)
         rows = sorted(self.cursor.fetchall())
         outputStr = ""
         for row in rows:
             outputStr += row[0] + ", "
-        print((plural + ": " + outputStr)[:-2])
+        print((plural + "(" + str(amount) + "): " + outputStr)[:-2])
 
     def get_id(self, name, table):
         """
@@ -332,20 +336,7 @@ class DatabaseSetup:
             print("Proficiencies have now all been added\n")
             self.add_class_magic(classId, 1)
             print("Magic details have now been added\n")
-
-            # Adds traits
-            classOptionsId += 1
-            self.add_options_connection("Class", classOptionsId, classId)
-            addElement = True
-            while addElement:
-                nextTrait = input("Enter the name of the trait to add, or press enter for none: ")
-                if nextTrait != "":
-                    nextTrait = self.get_id(nextTrait, "Trait")
-                    self.cursor.execute("INSERT INTO ClassTraits(classOptionsId, traitId) VALUES(?, ?);",
-                                        (classId, nextTrait))
-                    addElement = self.add_another_item()
-                else:
-                    addElement = False
+            classOptionsId = self.add_class_traits(classId, classOptionsId)
             print("All traits have now been added\n")
 
             addMore = self.add_another_item()
@@ -377,20 +368,7 @@ class DatabaseSetup:
             lvl = self.int_input("Enter the level that this subclass is chosen: ")
             self.add_class_magic(classId, lvl, subclassId)
             print("Magic details have now been added\n")
-
-            # Adds traits
-            classOptionsId += 1
-            self.add_options_connection("Class", classOptionsId, classId)
-            addElement = True
-            while addElement:
-                nextTrait = input("Enter the name of the trait to add, or press enter for none: ")
-                if nextTrait != "":
-                    nextTrait = self.get_id(nextTrait, "Trait")
-                    self.cursor.execute("INSERT INTO ClassTraits(classOptionsId, traitId) VALUES(?, ?);",
-                                        (classId, nextTrait))
-                    addElement = self.add_another_item()
-                else:
-                    addElement = False
+            classOptionsId = self.add_class_traits(classId, classOptionsId)
             print("All traits have now been added\n")
 
             addMore = self.add_another_item()
@@ -846,6 +824,43 @@ class DatabaseSetup:
             self.cursor.execute("INSERT INTO ClassSpell(magicId, spellId) VALUES (?, ?);", (magicId, spellId))
             addMore = self.add_another_item()
         print("All spells have been added\n")
+
+    def add_class_traits(self, class_id, class_options_id, subclass_id=-1):
+        """
+        Adds one or more traits to a class.
+        :param class_id: the unique identifier of the class to add to
+        :type class_id: int
+        :param class_options_id: the current total amount of ClassOptions rows
+        :type class_options_id: int
+        :param subclass_id: the unique identifier of the subclass to add to, if appropriate
+        :type subclass_id: int
+        :return: the new total amount of ClassOptions rows
+        """
+        class_options_id += 1
+        choiceOptionsId = class_options_id
+        self.add_options_connection("Class", class_options_id, class_id, subclass_id)
+        addElement = True
+        while addElement:
+            nextTrait = input("Enter the name of the trait to add, CHOICE for a choice, or enter for none: ")
+            if nextTrait == "CHOICE":
+                choiceOptionsId += 1
+                amnt = self.int_input("How many options are there: ")
+                picks = self.int_input("How many do they pick: ")
+                self.add_options_connection("Class", choiceOptionsId, class_id, subclass_id, picks)
+                for x in range(0, amnt):
+                    nextTraitChoice = input("Enter the name of the next trait option: ")
+                    nextTraitChoice = self.get_id(nextTraitChoice, "Trait")
+                    self.cursor.execute("INSERT INTO ClassTraits(classOptionsId, traitId) VALUES(?, ?);",
+                                        (choiceOptionsId, nextTraitChoice))
+
+            elif nextTrait != "":
+                nextTrait = self.get_id(nextTrait, "Trait")
+                self.cursor.execute("INSERT INTO ClassTraits(classOptionsId, traitId) VALUES(?, ?);",
+                                    (class_options_id, nextTrait))
+                addElement = self.add_another_item()
+            else:
+                addElement = False
+        return choiceOptionsId
 
 
 
