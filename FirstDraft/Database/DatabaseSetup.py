@@ -658,6 +658,10 @@ class DatabaseSetup:
             if nextProf == "CHOICE":
                 options_id += 1
                 amnt = self.int_input("How many of these do they choose? ")
+                if expertise:
+                    expertiseNum = self.int_input("How many of these get expertise? ")
+                else:
+                    expertiseNum = 0
                 self.add_options_connection(connector_type, options_id, connector_id, subconnector_id, amnt)
 
                 # enter a tag of choices or several individual choices
@@ -668,8 +672,8 @@ class DatabaseSetup:
                                         tag.replace("'", "''") + "%'")
                     for proficiencyId in self.cursor.fetchall():
                         self.cursor.execute("INSERT INTO " + connector_type + "Proficiency(" + connector_type.lower() +
-                                            "OptionsId, proficiencyId, expertise) VALUES(?, ?, ?);",
-                                            (options_id, proficiencyId[0], expertise))
+                                            "OptionsId, proficiencyId, expertise, expertiseNum) VALUES(?, ?, ?, ?);",
+                                            (options_id, proficiencyId[0], expertise, expertiseNum))
                 else:
                     optionAmnt = self.int_input("How many individual options are there? ")
                     for x in range(0, optionAmnt):
