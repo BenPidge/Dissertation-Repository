@@ -1,10 +1,7 @@
-import sqlite3 as sql
+from Database import CoreDatabase as Db
 
 
 class DatabaseSetup:
-    connection = sql.connect("Database/ChrDatabase.db")
-    cursor = connection.cursor()
-
     # CORE STATIC COMMANDS
 
     @staticmethod
@@ -26,34 +23,9 @@ class DatabaseSetup:
                 if line[:2] != "--" and len(line) > 1:
                     nextCommand += line
                 else:
-                    DatabaseSetup.cursor.execute(nextCommand)
+                    Db.cursor.execute(nextCommand)
                     nextCommand = ""
         file.close()
-
-    @staticmethod
-    def complete_setup():
-        """
-        Commits and closes the database connection, ensuring all edits are saved.
-        :return:
-        """
-        DatabaseSetup.connection.commit()
-        DatabaseSetup.connection.close()
-
-    @staticmethod
-    def int_input(prompt):
-        """
-        Repeatedly asks for an input until an integer is entered.
-        :param prompt: the question an input is required for
-        :type prompt: str
-        :return: the integer input
-        """
-        output = None
-        while output is None:
-            try:
-                output = int(input(prompt))
-            except ValueError:
-                print("The input entered was not an integer")
-        return output
 
     @staticmethod
     def add_another_item():
@@ -71,11 +43,26 @@ class DatabaseSetup:
                     addMore = False
         return addMore
 
+    @staticmethod
+    def print_added_table(table, plural):
+        """
+        Prints the names of all the currently entered items in the inputted table.
+        :param table: the table to extract the rows from
+        :type table: str
+        :param plural: the plural text of the tables' content
+        :type plural: str
+        """
+        Db.cursor.execute("SELECT COUNT(*) FROM " + table)
+        amount = Db.cursor.fetchone()[0]
+        Db.cursor.execute("SELECT " + table.lower() + "Name FROM " + table)
+        rows = sorted(Db.cursor.fetchall())
+        outputStr = ""
+        for row in rows:
+            outputStr += row[0] + ", "
+        print((plural + "(" + str(amount) + "): " + outputStr)[:-2])
 
-
-    # CORE NON-STATIC COMMANDS
-
-    def remove_item(self, table, item_id=None, name=None):
+    @staticmethod
+    def remove_item(table, item_id=None, name=None):
         """
         Removes an item from a table, based on their name or id.
         :param table: the table to remove the item from
@@ -89,7 +76,19 @@ class DatabaseSetup:
             sqlCall = "DELETE FROM " + table + " WHERE " + table.lower() + "Name=" + name
         else:
             sqlCall = "DELETE FROM " + table + " WHERE " + table.lower() + "Id=" + item_id
-        self.cursor.execute(sqlCall)
+        Db.cursor.execute(sqlCall)
+
+
+
+    # CORE NON-STATIC COMMANDS
+
+    def begin(self):
+        """
+        Begins the use of the database setup.
+        """
+        self.setup_tables()
+        self.print_all_added_data()
+        self.add_item()
 
     def add_item(self):
         """
@@ -108,7 +107,7 @@ class DatabaseSetup:
               "9. Class\n"
               "10. Subclass\n"
               "11. Exit\n")
-        value = self.int_input("> ")
+        value = Db.int_input("> ")
         if value == 1:
             self.add_spells()
         elif value == 2:
@@ -129,8 +128,6 @@ class DatabaseSetup:
             self.add_class()
         elif value == 10:
             self.add_subclass()
-        else:
-            SystemExit(0)
 
     def print_all_added_data(self):
         """
@@ -145,37 +142,6 @@ class DatabaseSetup:
             self.print_added_table(table[0], table[1])
         print("\n")
 
-    def print_added_table(self, table, plural):
-        """
-        Prints the names of all the currently entered items in the inputted table.
-        :param table: the table to extract the rows from
-        :type table: str
-        :param plural: the plural text of the tables' content
-        :type plural: str
-        """
-        self.cursor.execute("SELECT COUNT(*) FROM " + table)
-        amount = self.cursor.fetchone()[0]
-        self.cursor.execute("SELECT " + table.lower() + "Name FROM " + table)
-        rows = sorted(self.cursor.fetchall())
-        outputStr = ""
-        for row in rows:
-            outputStr += row[0] + ", "
-        print((plural + "(" + str(amount) + "): " + outputStr)[:-2])
-
-    def get_id(self, name, table):
-        """
-        Gets the id of a row from their table and name.
-        :param name: the name of the row to be found
-        :type name: str
-        :param table: the table the row is located in
-        :type table: str
-        :return: the integer value of the data's id
-        """
-        name = name.replace("'", "''")
-        self.cursor.execute(
-            "SELECT " + table.lower() + "Id from " + table + " WHERE " + table.lower() + "Name='" + name + "'")
-        return int(self.cursor.fetchone()[0])
-
 
 
     # ADD OVERARCHING TABLES' ROWS
@@ -185,31 +151,31 @@ class DatabaseSetup:
         Adds one or more races to the database.
         """
         # Gets the current amount of races and RaceOptions
-        self.cursor.execute("SELECT COUNT(*) FROM Race")
-        raceId = self.cursor.fetchone()[0]
-        self.cursor.execute("SELECT COUNT(*) FROM RaceOptions")
-        raceOptionsId = self.cursor.fetchone()[0]
+        Db.cursor.execute("SELECT COUNT(*) FROM Race")
+        raceId = Db.cursor.fetchone()[0]
+        Db.cursor.execute("SELECT COUNT(*) FROM RaceOptions")
+        raceOptionsId = Db.cursor.fetchone()[0]
 
         addMore = True
         while addMore:
             # Collects the bare race data
             raceId += 1
             name = input("Enter the race's name: ")
-            speed = self.int_input("Enter the race's speed: ")
+            speed = Db.int_input("Enter the race's speed: ")
             size = input("Enter the size of the race: ")
             darkvision = input("Does the race have darkvision? (Y/N): ") == "Y"
             resistance = input("Enter the race's resistance(s), or press enter if it has none: ")
             # Inserts the data, and converts the darkvision Y/N into 1 or 0
-            self.cursor.execute("INSERT INTO Race(raceId, raceName, speed, size, darkvision, resistance) "
-                                "VALUES(?, ?, ?, ?, ?, ?);", (raceId, name, speed, size, darkvision, resistance))
+            Db.cursor.execute("INSERT INTO Race(raceId, raceName, speed, size, darkvision, resistance) "
+                              "VALUES(?, ?, ?, ?, ?, ?);", (raceId, name, speed, size, darkvision, resistance))
 
             # Adds the ability scores for the race
             addElement = True
             while addElement:
                 newScore = input("Add the first 3 letters of the new ability score, or ALL for a choice of any: ")
-                scoreAmnt = self.int_input("How much does this score increase by? ")
-                self.cursor.execute("INSERT INTO RaceAbilityScore(raceId, abilityScore, scoreIncrease) VALUES(?, ?, ?);"
-                                    , (raceId, newScore, scoreAmnt))
+                scoreAmnt = Db.int_input("How much does this score increase by? ")
+                Db.cursor.execute("INSERT INTO RaceAbilityScore(raceId, abilityScore, scoreIncrease) VALUES(?, ?, ?);",
+                                  (raceId, newScore, scoreAmnt))
                 addElement = self.add_another_item()
             print("Ability scores have now all been added\n")
 
@@ -226,9 +192,8 @@ class DatabaseSetup:
             while addElement:
                 nextTrait = input("Enter the name of the trait to add, or press enter for none: ")
                 if nextTrait != "":
-                    nextTrait = self.get_id(nextTrait, "Trait")
-                    self.cursor.execute("INSERT INTO RaceTrait(raceId, traitId) VALUES(?, ?);",
-                                        (raceId, nextTrait))
+                    nextTrait = Db.get_id(nextTrait, "Trait")
+                    Db.cursor.execute("INSERT INTO RaceTrait(raceId, traitId) VALUES(?, ?);", (raceId, nextTrait))
                     addElement = self.add_another_item()
                 else:
                     addElement = False
@@ -240,19 +205,19 @@ class DatabaseSetup:
         """
         Adds one or more subraces to the database.
         """
-        self.cursor.execute("SELECT COUNT(*) FROM Subrace")
-        subraceId = self.cursor.fetchone()[0]
-        self.cursor.execute("SELECT COUNT(*) FROM RaceOptions")
-        raceOptionsId = self.cursor.fetchone()[0]
+        Db.cursor.execute("SELECT COUNT(*) FROM Subrace")
+        subraceId = Db.cursor.fetchone()[0]
+        Db.cursor.execute("SELECT COUNT(*) FROM RaceOptions")
+        raceOptionsId = Db.cursor.fetchone()[0]
         print("For all requested data, press enter if it isn't changed from the core race.\n")
 
         addMore = True
         while addMore:
             subraceId += 1
             race = input("Enter the name of the race this extends from: ")
-            raceId = self.get_id(race, "Race")
+            raceId = Db.get_id(race, "Race")
             name = input("Enter the subrace's name: ")
-            speed = self.int_input("Enter the subrace's speed, or 0 if it doesn't change: ")
+            speed = Db.int_input("Enter the subrace's speed, or 0 if it doesn't change: ")
             darkvision = input("Does the subrace gain darkvision? (Y/N): ") == "Y"
             resistance = input("Enter the subrace's resistance(s), or press enter if it has none: ")
 
@@ -268,15 +233,15 @@ class DatabaseSetup:
                     newParams.append(param[1])
 
             sqlCall += sqlValues + ");"
-            self.cursor.execute(sqlCall, (subraceId, raceId, name) + (*newParams, ))
+            Db.cursor.execute(sqlCall, (subraceId, raceId, name) + (*newParams,))
 
             # Adds the ability scores for the race
             addElement = True
             while addElement:
                 newScore = input("Add the first 3 letters of the new ability score, or ALL for a choice of any: ")
-                scoreAmnt = self.int_input("How much does this score increase by? ")
-                self.cursor.execute("INSERT INTO RaceAbilityScore(raceId, abilityScore, scoreIncrease, subraceId) "
-                                    "VALUES(?, ?, ?, ?);", (raceId, newScore, scoreAmnt, subraceId))
+                scoreAmnt = Db.int_input("How much does this score increase by? ")
+                Db.cursor.execute("INSERT INTO RaceAbilityScore(raceId, abilityScore, scoreIncrease, subraceId) "
+                                  "VALUES(?, ?, ?, ?);", (raceId, newScore, scoreAmnt, subraceId))
                 addElement = self.add_another_item()
             print("Ability scores have now all been added\n")
 
@@ -291,9 +256,9 @@ class DatabaseSetup:
             while addElement:
                 nextTrait = input("Enter the name of the trait to add, or press enter for none: ")
                 if nextTrait != "":
-                    nextTrait = self.get_id(nextTrait, "Trait")
-                    self.cursor.execute("INSERT INTO RaceTrait(raceId, traitId, subraceId) VALUES(?, ?, ?);",
-                                        (raceId, nextTrait, subraceId))
+                    nextTrait = Db.get_id(nextTrait, "Trait")
+                    Db.cursor.execute("INSERT INTO RaceTrait(raceId, traitId, subraceId) VALUES(?, ?, ?);",
+                                      (raceId, nextTrait, subraceId))
                     addElement = self.add_another_item()
                 else:
                     addElement = False
@@ -306,25 +271,25 @@ class DatabaseSetup:
         Adds the first level of one or more classes into the database.
         """
         # Gets the current amount of classes and ClassOptions
-        self.cursor.execute("SELECT COUNT(*) FROM Class")
-        classId = self.cursor.fetchone()[0]
-        self.cursor.execute("SELECT COUNT(*) FROM ClassOptions")
-        classOptionsId = self.cursor.fetchone()[0]
+        Db.cursor.execute("SELECT COUNT(*) FROM Class")
+        classId = Db.cursor.fetchone()[0]
+        Db.cursor.execute("SELECT COUNT(*) FROM ClassOptions")
+        classOptionsId = Db.cursor.fetchone()[0]
 
         addMore = True
         while addMore:
             # Collects the core data for the class
             classId += 1
             name = input("Enter the classes name: ")
-            hitDice = self.int_input("Enter the amount of sides of the character's hit dice: ")
+            hitDice = Db.int_input("Enter the amount of sides of the character's hit dice: ")
             pAbility = input("Enter the first 3 letters of the primary ability: ")
             sAbility = input("Enter the first 3 letters of the secondary ability: ")
             isMagic = input("Is the class fully or partially magical? (Y/N) ") == "Y"
             savingThrows = input("Enter the first three characters of the first saving throw: ")
             savingThrows += ", " + input("Enter the first three characters of the second saving throw: ")
-            self.cursor.execute("INSERT INTO Class(classId, className, hitDiceSides, primaryAbility, secondaryAbility, "
-                                "isMagical, savingThrows) VALUES(?, ?, ?, ?, ?, ?, ?);",
-                                (classId, name, hitDice, pAbility, sAbility, isMagic, savingThrows))
+            Db.cursor.execute("INSERT INTO Class(classId, className, hitDiceSides, primaryAbility, secondaryAbility, "
+                              "isMagical, savingThrows) VALUES(?, ?, ?, ?, ?, ?, ?);",
+                              (classId, name, hitDice, pAbility, sAbility, isMagic, savingThrows))
 
             # Adds all data received from other methods
             print("Input the starting equipment information.")
@@ -345,27 +310,27 @@ class DatabaseSetup:
         """
         Adds the first level of one or more subclasses to the database.
         """
-        self.cursor.execute("SELECT COUNT(*) FROM Subclass")
-        subclassId = self.cursor.fetchone()[0]
-        self.cursor.execute("SELECT COUNT(*) FROM ClassOptions")
-        classOptionsId = self.cursor.fetchone()[0]
+        Db.cursor.execute("SELECT COUNT(*) FROM Subclass")
+        subclassId = Db.cursor.fetchone()[0]
+        Db.cursor.execute("SELECT COUNT(*) FROM ClassOptions")
+        classOptionsId = Db.cursor.fetchone()[0]
 
         addMore = True
         while addMore:
             # Adds core subclass data
             subclassId += 1
             classId = input("Enter what class you want to create a subclass for: ")
-            classId = self.get_id(classId, "Class")
+            classId = Db.get_id(classId, "Class")
             subclassName = input("Enter the name of the new subclass: ")
-            self.cursor.execute("INSERT INTO Subclass(subclassId, classId, subclassName) VALUES(?, ?, ?);",
-                                (subclassId, classId, subclassName))
+            Db.cursor.execute("INSERT INTO Subclass(subclassId, classId, subclassName) VALUES(?, ?, ?);",
+                              (subclassId, classId, subclassName))
 
             # Adds all data received from other methods
             classOptionsId = self.add_language_connection("Class", classId, classOptionsId, subclassId)
             print("Languages have now all been added\n")
             classOptionsId = self.add_proficiency_connection("Class", classId, classOptionsId, subclassId)
             print("Proficiencies have now all been added\n")
-            lvl = self.int_input("Enter the level that this subclass is chosen: ")
+            lvl = Db.int_input("Enter the level that this subclass is chosen: ")
             self.add_class_magic(classId, lvl, subclassId)
             print("Magic details have now been added\n")
             classOptionsId = self.add_class_traits(classId, classOptionsId)
@@ -377,18 +342,17 @@ class DatabaseSetup:
         """
         Adds one or more backgrounds to the database.
         """
-        self.cursor.execute("SELECT COUNT(*) FROM Background")
-        backgroundId = self.cursor.fetchone()[0]
+        Db.cursor.execute("SELECT COUNT(*) FROM Background")
+        backgroundId = Db.cursor.fetchone()[0]
         addMore = True
         while addMore:
             backgroundId += 1
             name = input("Enter the background's name: ")
-            skillAmnt = self.int_input("Enter how many skills the character gets: ")
-            toolAmnt = self.int_input("Enter how many tools the character gets: ")
-            languageAmnt = self.int_input("Enter how many languages the character gets: ")
-            self.cursor.execute(
-                "INSERT INTO Background(backgroundId, backgroundName, skillAmnt, toolAmnt, languageAmnt) "
-                "VALUES(?, ?, ?, ?, ?);", (backgroundId, name, skillAmnt, toolAmnt, languageAmnt))
+            skillAmnt = Db.int_input("Enter how many skills the character gets: ")
+            toolAmnt = Db.int_input("Enter how many tools the character gets: ")
+            languageAmnt = Db.int_input("Enter how many languages the character gets: ")
+            Db.cursor.execute("INSERT INTO Background(backgroundId, backgroundName, skillAmnt, toolAmnt, languageAmnt) "
+                              "VALUES(?, ?, ?, ?, ?);", (backgroundId, name, skillAmnt, toolAmnt, languageAmnt))
 
             self.add_background_connections(backgroundId, skillAmnt, languageAmnt, toolAmnt)
             self.add_equipment_option("background", backgroundId)
@@ -400,39 +364,37 @@ class DatabaseSetup:
         """
         Adds one or more traits to the database.
         """
-        self.cursor.execute("SELECT COUNT(*) FROM Trait")
-        traitId = self.cursor.fetchone()[0]
+        Db.cursor.execute("SELECT COUNT(*) FROM Trait")
+        traitId = Db.cursor.fetchone()[0]
         addMore = True
         while addMore:
             traitId += 1
             name = input("Enter the trait's name: ")
             description = input("Enter the trait's description: ")
             tag = input("Enter the tag or tags this tag involves: ")
-            tagValue = self.int_input("Enter the value related to this tag, or -1 if there isn't one: ")
+            tagValue = Db.int_input("Enter the value related to this tag, or -1 if there isn't one: ")
 
             if tagValue == -1:
-                self.cursor.execute(
-                    "INSERT INTO Trait(traitId, traitName, traitDescription, traitTag) "
-                    "VALUES(?, ?, ?, ?);", (traitId, name, description, tag))
+                Db.cursor.execute("INSERT INTO Trait(traitId, traitName, traitDescription, traitTag) "
+                                  "VALUES(?, ?, ?, ?);", (traitId, name, description, tag))
             else:
-                self.cursor.execute(
-                    "INSERT INTO Trait(traitId, traitName, traitDescription, traitTag, traitTagValue) "
-                    "VALUES(?, ?, ?, ?, ?);", (traitId, name, description, tag, tagValue))
+                Db.cursor.execute("INSERT INTO Trait(traitId, traitName, traitDescription, traitTag, traitTagValue) "
+                                  "VALUES(?, ?, ?, ?, ?);", (traitId, name, description, tag, tagValue))
 
             addOption = input("Does this trait have options? (Y/N) ") == "Y"
-            self.cursor.execute("SELECT COUNT(*) FROM TraitOption")
-            traitOptionId = self.cursor.fetchone()[0]
+            Db.cursor.execute("SELECT COUNT(*) FROM TraitOption")
+            traitOptionId = Db.cursor.fetchone()[0]
             while addOption:
                 traitOptionId += 1
                 desc = input("Enter the description of the option: ")
-                value = self.int_input("Enter the number value associated with this option, or -1 if there is none: ")
+                value = Db.int_input("Enter the number value associated with this option, or -1 if there is none: ")
 
                 if tagValue == -1:
-                    self.cursor.execute("INSERT INTO TraitOption(traitOptionId, traitId, optionDesc) "
-                                        "VALUES(?, ?, ?);", (traitOptionId, traitId, desc))
+                    Db.cursor.execute("INSERT INTO TraitOption(traitOptionId, traitId, optionDesc) VALUES(?, ?, ?);",
+                                      (traitOptionId, traitId, desc))
                 else:
-                    self.cursor.execute("INSERT INTO TraitOption(traitOptionId, traitId, optionDesc, optionVal) "
-                                        "VALUES(?, ?, ?, ?);", (traitOptionId, traitId, desc, value))
+                    Db.cursor.execute("INSERT INTO TraitOption(traitOptionId, traitId, optionDesc, optionVal) "
+                                      "VALUES(?, ?, ?, ?);", (traitOptionId, traitId, desc, value))
                 addOption = self.add_another_item()
             print("All trait options are added\n")
 
@@ -441,6 +403,37 @@ class DatabaseSetup:
 
 
     # ADD CONNECTED ROWS
+
+    @staticmethod
+    def add_options_connection(connector_type, options_id, connector_id, subconnector_id=-1, amnt_to_choose=-1):
+        """
+        Adds a RaceOptions or ClassOptions to be used for part of the race or class building.
+        :param connector_type: states whether the row connects to a class or race. It's inputs are 'Class' or 'Race'
+        :type connector_type: str
+        :param options_id: the id to be used for the new RaceOptions/ClassOptions
+        :type options_id: int
+        :param connector_id: the unique identifier for the row to add options to
+        :type connector_id: int
+        :param subconnector_id: the id of the subrace or subclass it connects to, if appropriate
+        :type subconnector_id: int
+        :param amnt_to_choose: the amount of these options they choose, if a choice must be made
+        :type amnt_to_choose: int
+        """
+        sqlStart = "INSERT INTO " + connector_type + "Options(" + connector_type.lower() + "OptionsId, " \
+                   + connector_type.lower() + "Id"
+        sqlEnd = "VALUES(?, ?"
+        params = [options_id, connector_id]
+
+        if subconnector_id > -1:
+            sqlStart += ", sub" + connector_type.lower() + "Id"
+            sqlEnd += ", ?"
+            params.append(subconnector_id)
+        if amnt_to_choose > -1:
+            sqlStart += ", amntToChoose"
+            sqlEnd += ",  ?"
+            params.append(amnt_to_choose)
+
+        Db.cursor.execute(sqlStart + ") " + sqlEnd + ");", (*params,))
 
     def add_equipment_option(self, connector_type, connector_id):
         """
@@ -451,11 +444,10 @@ class DatabaseSetup:
         :param connector_id: the id of the class or background it connects to
         :type connector_id: int
         """
-        amnt = self.int_input("How many bullet points of items or item choices are there: ")
+        amnt = Db.int_input("How many bullet points of items or item choices are there: ")
         for x in range(1, amnt+1):
             print("Now starting bullet point " + str(x) + "\n")
             self.add_equipment_point(connector_type, connector_id, "Point " + str(x))
-
 
     def add_equipment_point(self, connector_type, connector_id, path=""):
         """
@@ -469,8 +461,8 @@ class DatabaseSetup:
         :type path: str
         :return the integer value of how many equipmentOptions there are now
         """
-        self.cursor.execute("SELECT COUNT(*) FROM EquipmentOption")
-        equipmentOptionId = self.cursor.fetchone()[0]
+        Db.cursor.execute("SELECT COUNT(*) FROM EquipmentOption")
+        equipmentOptionId = Db.cursor.fetchone()[0]
         addMore = True
         while addMore:
             equipmentOptionId += 1
@@ -478,26 +470,24 @@ class DatabaseSetup:
 
             # makes the appropriate SQL call, based on the type of connector
             if connector_type == "equipment option":
-                self.cursor.execute("INSERT INTO EquipmentOption(equipOptionId, suboption, hasChoice) VALUES (?, ?, ?)",
-                                    (equipmentOptionId, connector_id, hasChoice))
+                Db.cursor.execute("INSERT INTO EquipmentOption(equipOptionId, suboption, hasChoice) VALUES (?, ?, ?)",
+                                  (equipmentOptionId, connector_id, hasChoice))
             else:
-                self.cursor.execute("INSERT INTO EquipmentOption(equipOptionId, " + connector_type + "Id, hasChoice) "
-                                                                                                     "VALUES (?, ?, ?)",
-                                    (equipmentOptionId, connector_id, hasChoice))
+                Db.cursor.execute("INSERT INTO EquipmentOption(equipOptionId, " + connector_type + "Id, hasChoice) "
+                                  "VALUES (?, ?, ?)", (equipmentOptionId, connector_id, hasChoice))
 
             # adds the options attached to this
             isTagBased = input("Are the items connected to this item specific or any from a tag? (specific/tag) ")
 
             # adds all items from a tag
             if isTagBased == "tag":
-                tag = input("Enter the next items to add, by their common tag: ")
-                amount = self.int_input("Enter how much of this item they get: ")
-                self.cursor.execute("SELECT equipmentId FROM Equipment WHERE tags LIKE '%" +
-                                    tag.replace("'", "''") + "%'")
-                results = self.cursor.fetchall()
+                tag = input("Enter the next items to add, by their common tag: ").replace("'", "''")
+                amount = Db.int_input("Enter how much of this item they get: ")
+                Db.cursor.execute("SELECT equipmentId FROM Equipment WHERE tags LIKE '%" + tag + "%'")
+                results = Db.cursor.fetchall()
                 for x in range(0, len(results)):
-                    self.cursor.execute("INSERT INTO EquipmentIndivOption(equipmentId, equipmentOptionId, amnt) "
-                                        "VALUES (?, ?, ?)", (results[x][0], equipmentOptionId, amount))
+                    Db.cursor.execute("INSERT INTO EquipmentIndivOption(equipmentId, equipmentOptionId, amnt) "
+                                      "VALUES (?, ?, ?)", (results[x][0], equipmentOptionId, amount))
                 # results currently will be something like [(1,), (4,)]
                 path += " -> " + tag + " tag"
 
@@ -507,15 +497,15 @@ class DatabaseSetup:
                 while moreEquipment:
                     isRecursive = input("Does the next option to add involve a choice or multiple items? (Y/N) ")
                     if isRecursive == "Y":
-                        equipmentOptionId = self.add_equipment_point(connector_type, equipmentOptionId,
-                                                                     path + " -> Recursion")
+                        path += " -> Recursion"
+                        equipmentOptionId = self.add_equipment_point(connector_type, equipmentOptionId, path)
                     else:
                         name = input("Enter the next item to add, by it's equipment name: ")
-                        amount = self.int_input("Enter how much of this item they get: ")
-                        self.cursor.execute("INSERT INTO EquipmentIndivOption(equipmentId, equipmentOptionId, amnt) "
-                                            "VALUES (?, ?, ?)",
-                                            (self.get_id(name, "Equipment"), equipmentOptionId, amount))
+                        amount = Db.int_input("Enter how much of this item they get: ")
+                        Db.cursor.execute("INSERT INTO EquipmentIndivOption(equipmentId, equipmentOptionId, amnt) "
+                                          "VALUES (?, ?, ?)", (Db.get_id(name, "Equipment"), equipmentOptionId, amount))
                     moreEquipment = self.add_another_item()
+
                 try:
                     path += " -> " + name
                 except UnboundLocalError:
@@ -542,34 +532,34 @@ class DatabaseSetup:
             skillName = input("Enter the name of the next skill the background offers, 'ALL' for all or 'TAG' "
                               "followed by the tag for a subgroup: ")
             if skillName == "ALL":
-                self.cursor.execute("SELECT proficiencyId FROM Proficiency WHERE proficiencyType='Skill'")
-                results = self.cursor.fetchall()
+                Db.cursor.execute("SELECT proficiencyId FROM Proficiency WHERE proficiencyType='Skill'")
+                results = Db.cursor.fetchall()
                 for x in range(0, len(results)):
-                    self.cursor.execute("INSERT INTO BackgroundProficiency(backgroundId, proficiencyId) "
-                                        "VALUES (?, ?)", (background_id, results[x][0]))
+                    Db.cursor.execute("INSERT INTO BackgroundProficiency(backgroundId, proficiencyId) VALUES (?, ?)",
+                                      (background_id, results[x][0]))
             elif skillName[0:3] == "TAG":
-                self.cursor.execute("SELECT proficiencyId FROM Proficiency WHERE proficiencyType LIKE '%" +
-                                    skillName[4:].replace("'", "''") + "%'")
-                for result in self.cursor.fetchall():
-                    self.cursor.execute("INSERT INTO BackgroundProficiency(backgroundId, proficiencyId) VALUES(?, ?);",
-                                        (background_id, result[0]))
+                Db.cursor.execute("SELECT proficiencyId FROM Proficiency WHERE proficiencyType LIKE '%" +
+                                  skillName[4:].replace("'", "''") + "%'")
+                for result in Db.cursor.fetchall():
+                    Db.cursor.execute("INSERT INTO BackgroundProficiency(backgroundId, proficiencyId) VALUES(?, ?);",
+                                      (background_id, result[0]))
             else:
-                self.cursor.execute("INSERT INTO BackgroundProficiency(backgroundId, proficiencyId) VALUES(?, ?);",
-                                    (background_id, self.get_id(skillName, "Proficiency")))
+                Db.cursor.execute("INSERT INTO BackgroundProficiency(backgroundId, proficiencyId) VALUES(?, ?);",
+                                  (background_id, Db.get_id(skillName, "Proficiency")))
             addSkill = self.add_another_item()
 
         addLang = (language_amnt > 0)
         while addLang:
             langName = input("Enter the name of the next language the background offers or 'ALL' for all: ")
             if langName == "ALL":
-                self.cursor.execute("SELECT languageId FROM Language")
-                results = self.cursor.fetchall()
+                Db.cursor.execute("SELECT languageId FROM Language")
+                results = Db.cursor.fetchall()
                 for x in range(0, len(results)):
-                    self.cursor.execute("INSERT INTO BackgroundLanguage(backgroundId, languageId) "
-                                        "VALUES (?, ?)", (background_id, results[x][0]))
+                    Db.cursor.execute("INSERT INTO BackgroundLanguage(backgroundId, languageId) VALUES (?, ?)",
+                                      (background_id, results[x][0]))
             else:
-                self.cursor.execute("INSERT INTO BackgroundLanguage(backgroundId, languageId) VALUES(?, ?);",
-                                    (background_id, self.get_id(langName, "Language")))
+                Db.cursor.execute("INSERT INTO BackgroundLanguage(backgroundId, languageId) VALUES(?, ?);",
+                                  (background_id, Db.get_id(langName, "Language")))
             addLang = self.add_another_item()
 
         addTool = (tool_amnt > 0)
@@ -577,20 +567,20 @@ class DatabaseSetup:
             toolName = input("Enter the name of the next tool the background offers, 'ALL' for all or 'TAG' "
                              "followed by the tag for a subgroup: ")
             if toolName == "ALL":
-                self.cursor.execute("SELECT proficiencyId FROM Proficiency WHERE proficiencyType='Tool'")
-                results = self.cursor.fetchall()
+                Db.cursor.execute("SELECT proficiencyId FROM Proficiency WHERE proficiencyType='Tool'")
+                results = Db.cursor.fetchall()
                 for x in range(0, len(results)):
-                    self.cursor.execute("INSERT INTO BackgroundProficiency(backgroundId, proficiencyId) "
-                                        "VALUES (?, ?)", (background_id, results[x][0]))
+                    Db.cursor.execute("INSERT INTO BackgroundProficiency(backgroundId, proficiencyId) VALUES (?, ?)",
+                                      (background_id, results[x][0]))
             elif toolName[0:3] == "TAG":
-                self.cursor.execute("SELECT proficiencyId FROM Proficiency WHERE proficiencyType LIKE '%" +
-                                    toolName[4:].replace("'", "''") + "%'")
-                for result in self.cursor.fetchall():
-                    self.cursor.execute("INSERT INTO BackgroundProficiency(backgroundId, proficiencyId) VALUES(?, ?);",
-                                        (background_id, result[0]))
+                Db.cursor.execute("SELECT proficiencyId FROM Proficiency WHERE proficiencyType LIKE '%" +
+                                  toolName[4:].replace("'", "''") + "%'")
+                for result in Db.cursor.fetchall():
+                    Db.cursor.execute("INSERT INTO BackgroundProficiency(backgroundId, proficiencyId) VALUES(?, ?);",
+                                      (background_id, result[0]))
             else:
-                self.cursor.execute("INSERT INTO BackgroundProficiency(backgroundId, proficiencyId) VALUES(?, ?);",
-                                    (background_id, self.get_id(toolName, "Proficiency")))
+                Db.cursor.execute("INSERT INTO BackgroundProficiency(backgroundId, proficiencyId) VALUES(?, ?);",
+                                  (background_id, Db.get_id(toolName, "Proficiency")))
             addTool = self.add_another_item()
 
     def add_language_connection(self, connector_type, connector_id, options_id, subconnector_id=-1):
@@ -618,16 +608,16 @@ class DatabaseSetup:
             if nextLanguage == "ALL":
                 options_id += 1
                 self.add_options_connection(connector_type, options_id, connector_id, subconnector_id, 1)
-                self.cursor.execute("SELECT languageId FROM Language")
-                for languageId in self.cursor.fetchall():
-                    self.cursor.execute("INSERT INTO " + connector_type + "Language(" + connector_type.lower()
-                                        + "OptionsId, language) VALUES(?, ?);", (options_id, languageId[0]))
+                Db.cursor.execute("SELECT languageId FROM Language")
+                for languageId in Db.cursor.fetchall():
+                    Db.cursor.execute("INSERT INTO " + connector_type + "Language(" + connector_type.lower()
+                                      + "OptionsId, language) VALUES(?, ?);", (options_id, languageId[0]))
             elif nextLanguage == "":
                 return options_id
             else:
-                nextLanguage = self.get_id(nextLanguage, "Language")
-                self.cursor.execute("INSERT INTO " + connector_type + "Language(" + connector_type.lower()
-                                    + "OptionsId, language) VALUES(?, ?);", (defaultOptionsId, nextLanguage))
+                nextLanguage = Db.get_id(nextLanguage, "Language")
+                Db.cursor.execute("INSERT INTO " + connector_type + "Language(" + connector_type.lower()
+                                  + "OptionsId, language) VALUES(?, ?);", (defaultOptionsId, nextLanguage))
             addElement = self.add_another_item()
         return options_id
 
@@ -657,9 +647,9 @@ class DatabaseSetup:
             # if it's a choice, enter the options
             if nextProf == "CHOICE":
                 options_id += 1
-                amnt = self.int_input("How many of these do they choose? ")
+                amnt = Db.int_input("How many of these do they choose? ")
                 if expertise:
-                    expertiseNum = self.int_input("How many of these get expertise? ")
+                    expertiseNum = Db.int_input("How many of these get expertise? ")
                 else:
                     expertiseNum = 0
                 self.add_options_connection(connector_type, options_id, connector_id, subconnector_id, amnt)
@@ -668,29 +658,29 @@ class DatabaseSetup:
                 tagOrIndiv = input("Are these choices from a TAG or INDIVIDUAL? ")
                 if tagOrIndiv == "TAG":
                     tag = input("Please input the tag they choose from: ")
-                    self.cursor.execute("SELECT proficiencyId FROM Proficiency WHERE proficiencyType LIKE '%" +
-                                        tag.replace("'", "''") + "%'")
-                    for proficiencyId in self.cursor.fetchall():
-                        self.cursor.execute("INSERT INTO " + connector_type + "Proficiency(" + connector_type.lower() +
-                                            "OptionsId, proficiencyId, expertise, expertiseNum) VALUES(?, ?, ?, ?);",
-                                            (options_id, proficiencyId[0], expertise, expertiseNum))
+                    Db.cursor.execute("SELECT proficiencyId FROM Proficiency WHERE proficiencyType LIKE '%" +
+                                      tag.replace("'", "''") + "%'")
+                    for proficiencyId in Db.cursor.fetchall():
+                        Db.cursor.execute("INSERT INTO " + connector_type + "Proficiency(" + connector_type.lower() +
+                                          "OptionsId, proficiencyId, expertise, expertiseNum) VALUES(?, ?, ?, ?);",
+                                          (options_id, proficiencyId[0], expertise, expertiseNum))
                 else:
-                    optionAmnt = self.int_input("How many individual options are there? ")
+                    optionAmnt = Db.int_input("How many individual options are there? ")
                     for x in range(0, optionAmnt):
                         nextProf = input("Enter the next proficiency option: ")
-                        nextProf = self.get_id(nextProf, "Proficiency")
-                        self.cursor.execute("INSERT INTO " + connector_type + "Proficiency(" + connector_type.lower() +
-                                            "OptionsId, proficiencyId, expertise) VALUES(?, ?, ?);",
-                                            (defaultOptionsId, nextProf, expertise))
+                        nextProf = Db.get_id(nextProf, "Proficiency")
+                        Db.cursor.execute("INSERT INTO " + connector_type + "Proficiency(" + connector_type.lower() +
+                                          "OptionsId, proficiencyId, expertise) VALUES(?, ?, ?);",
+                                          (defaultOptionsId, nextProf, expertise))
                 print("The optional proficiencies have been complete.")
             elif nextProf == "":
                 return options_id
             # otherwise, connect it to the non-optional raceOptions row
             else:
-                nextProf = self.get_id(nextProf, "Proficiency")
-                self.cursor.execute("INSERT INTO " + connector_type + "Proficiency(" + connector_type.lower() +
-                                    "OptionsId, proficiencyId, expertise) VALUES(?, ?, ?);",
-                                    (defaultOptionsId, nextProf, expertise))
+                nextProf = Db.get_id(nextProf, "Proficiency")
+                Db.cursor.execute("INSERT INTO " + connector_type + "Proficiency(" + connector_type.lower() +
+                                  "OptionsId, proficiencyId, expertise) VALUES(?, ?, ?);",
+                                  (defaultOptionsId, nextProf, expertise))
             addElement = self.add_another_item()
         return options_id
 
@@ -714,45 +704,15 @@ class DatabaseSetup:
             nextSpell = input("Enter the spell to add to the race: ")
             if nextSpell == "":
                 return race_options_id
-            spellLvl = self.int_input("Enter the level the spell is cast at: ")
-            chrLvl = self.int_input("Enter the level the character can cast the spell at: ")
+            spellLvl = Db.int_input("Enter the level the spell is cast at: ")
+            chrLvl = Db.int_input("Enter the level the character can cast the spell at: ")
             modUsed = input("Enter the first 3 letters of the modifier used: ")
-            nextSpell = self.get_id(nextSpell, "Spell")
-            self.cursor.execute("INSERT INTO RaceSpell(raceOptionsId, spellId, spellLevel, characterLevel, modifierUsed"
-                                ") VALUES(?, ?, ?, ?, ?);", (race_options_id, nextSpell, spellLvl, chrLvl, modUsed))
+            nextSpell = Db.get_id(nextSpell, "Spell")
+            Db.cursor.execute("INSERT INTO RaceSpell(raceOptionsId, spellId, spellLevel, characterLevel, modifierUsed"
+                              ") VALUES(?, ?, ?, ?, ?);", (race_options_id, nextSpell, spellLvl, chrLvl, modUsed))
 
             addElement = self.add_another_item()
         return race_options_id
-
-    def add_options_connection(self, connector_type, options_id, connector_id, subconnector_id=-1, amnt_to_choose=-1):
-        """
-        Adds a RaceOptions or ClassOptions to be used for part of the race or class building.
-        :param connector_type: states whether the row connects to a class or race. It's inputs are 'Class' or 'Race'
-        :type connector_type: str
-        :param options_id: the id to be used for the new RaceOptions/ClassOptions
-        :type options_id: int
-        :param connector_id: the unique identifier for the row to add options to
-        :type connector_id: int
-        :param subconnector_id: the id of the subrace or subclass it connects to, if appropriate
-        :type subconnector_id: int
-        :param amnt_to_choose: the amount of these options they choose, if a choice must be made
-        :type amnt_to_choose: int
-        """
-        sqlStart = "INSERT INTO " + connector_type + "Options(" + connector_type.lower() + "OptionsId, " \
-                   + connector_type.lower() + "Id"
-        sqlEnd = "VALUES(?, ?"
-        params = [options_id, connector_id]
-
-        if subconnector_id > -1:
-            sqlStart += ", sub" + connector_type.lower() + "Id"
-            sqlEnd += ", ?"
-            params.append(subconnector_id)
-        if amnt_to_choose > -1:
-            sqlStart += ", amntToChoose"
-            sqlEnd += ",  ?"
-            params.append(amnt_to_choose)
-
-        self.cursor.execute(sqlStart + ") " + sqlEnd + ");", (*params, ))
 
     def add_class_magic(self, class_id, lvl, subclass_id=-1):
         """
@@ -764,59 +724,59 @@ class DatabaseSetup:
         :param subclass_id: the unique identifier of the subclass required for the class to gain access to this, or -1
         :type subclass_id: int
         """
-        self.cursor.execute("SELECT COUNT(*) FROM ClassMagic")
-        magicId = self.cursor.fetchone()[0] + 1
+        Db.cursor.execute("SELECT COUNT(*) FROM ClassMagic")
+        magicId = Db.cursor.fetchone()[0] + 1
         spellsPrepared = input("Are the spells prepared during a long rest? (Y/N) ") == "Y"
-        cantripsKnown = self.int_input("Enter how many cantrips are known at this stage: ")
+        cantripsKnown = Db.int_input("Enter how many cantrips are known at this stage: ")
         if spellsPrepared:
             knownCalc = input("Enter how the amount of spells are calculated: ")
             if subclass_id > -1:
-                self.cursor.execute("INSERT INTO ClassMagic(magicId, classId, subclassId, spellsPrepared, knownCalc, "
-                                    "lvl, cantripsKnown) VALUES(?, ?, ?, ?, ?, ?, ?);",
-                                    (magicId, class_id, subclass_id, spellsPrepared, knownCalc, lvl, cantripsKnown))
+                Db.cursor.execute("INSERT INTO ClassMagic(magicId, classId, subclassId, spellsPrepared, knownCalc, "
+                                  "lvl, cantripsKnown) VALUES(?, ?, ?, ?, ?, ?, ?);",
+                                  (magicId, class_id, subclass_id, spellsPrepared, knownCalc, lvl, cantripsKnown))
             else:
-                self.cursor.execute("INSERT INTO ClassMagic(magicId, classId, spellsPrepared, knownCalc, lvl, "
-                                    "cantripsKnown) VALUES(?, ?, ?, ?, ?, ?);",
-                                    (magicId, class_id, spellsPrepared, knownCalc, lvl, cantripsKnown))
+                Db.cursor.execute("INSERT INTO ClassMagic(magicId, classId, spellsPrepared, knownCalc, lvl, "
+                                  "cantripsKnown) VALUES(?, ?, ?, ?, ?, ?);",
+                                  (magicId, class_id, spellsPrepared, knownCalc, lvl, cantripsKnown))
         else:
-            amntKnown = self.int_input("Enter how many spells are known at this stage: ")
+            amntKnown = Db.int_input("Enter how many spells are known at this stage: ")
             if subclass_id > -1:
-                self.cursor.execute("INSERT INTO ClassMagic(magicId, classId, subclassId, spellsPrepared, knownCalc, "
-                                    "amntKnown, lvl, cantripsKnown) VALUES(?, ?, ?, ?, ?, ?, ?, ?);",
-                                    (magicId, class_id, subclass_id, spellsPrepared, "ALL", amntKnown, lvl,
-                                     cantripsKnown))
+                Db.cursor.execute("INSERT INTO ClassMagic(magicId, classId, subclassId, spellsPrepared, knownCalc, "
+                                  "amntKnown, lvl, cantripsKnown) VALUES(?, ?, ?, ?, ?, ?, ?, ?);",
+                                  (magicId, class_id, subclass_id, spellsPrepared, "ALL",
+                                   amntKnown, lvl, cantripsKnown))
             else:
-                self.cursor.execute("INSERT INTO ClassMagic(magicId, classId, spellsPrepared, knownCalc, amntKnown, lvl"
-                                    ", cantripsKnown) VALUES(?, ?, ?, ?, ?, ?, ?);",
-                                    (magicId, class_id, spellsPrepared, "ALL", amntKnown, lvl, cantripsKnown))
+                Db.cursor.execute("INSERT INTO ClassMagic(magicId, classId, spellsPrepared, knownCalc, amntKnown, lvl"
+                                  ", cantripsKnown) VALUES(?, ?, ?, ?, ?, ?, ?);",
+                                  (magicId, class_id, spellsPrepared, "ALL", amntKnown, lvl, cantripsKnown))
 
         # If it's not the first level, add all previous spells and slots to the class magic
         if lvl > 1:
-            self.cursor.execute("SELECT magicId FROM ClassMagic WHERE lvl=" + str(lvl - 1) +
-                                " AND classId=" + str(class_id))
-            prevMagicId = str(self.cursor.fetchone()[0])
-            self.cursor.execute("SELECT spellslotLvl, amount FROM ClassSpellslot WHERE magicId=" + prevMagicId)
-            for slot in self.cursor.fetchall():
-                self.cursor.execute("INSERT INTO ClassSpellslot(magicId, spellslotLvl, amount) VALUES (?, ?, ?);",
-                                    (magicId, slot[0], slot[1]))
-            self.cursor.execute("SELECT spellId FROM ClassSpell WHERE magicId=" + prevMagicId)
-            for spell in self.cursor.fetchall():
-                self.cursor.execute("INSERT INTO ClassSpell(magicId, spellId) VALUES (?, ?);",
-                                    (magicId, spell[0], spell[1]))
+            Db.cursor.execute("SELECT magicId FROM ClassMagic WHERE lvl=" + str(lvl - 1) +
+                              " AND classId=" + str(class_id))
+            prevMagicId = str(Db.cursor.fetchone()[0])
+            Db.cursor.execute("SELECT spellslotLvl, amount FROM ClassSpellslot WHERE magicId=" + prevMagicId)
+            for slot in Db.cursor.fetchall():
+                Db.cursor.execute("INSERT INTO ClassSpellslot(magicId, spellslotLvl, amount) VALUES (?, ?, ?);",
+                                  (magicId, slot[0], slot[1]))
+            Db.cursor.execute("SELECT spellId FROM ClassSpell WHERE magicId=" + prevMagicId)
+            for spell in Db.cursor.fetchall():
+                Db.cursor.execute("INSERT INTO ClassSpell(magicId, spellId) VALUES (?, ?);",
+                                  (magicId, spell[0], spell[1]))
 
         # Add spellslots
         addMore = input("Does the class gain any new spellslots from the previous level? (Y/N) ") == "Y"
         while addMore:
-            spellslotLvl = self.int_input("What's the level of the new spellslot gained: ")
+            spellslotLvl = Db.int_input("What's the level of the new spellslot gained: ")
             isNew = input("Is the new spellslot the first of it's level? (Y/N) ") == "Y"
             if isNew:
-                amount = self.int_input("How many of these slots does the class get: ")
-                self.cursor.execute("INSERT INTO ClassSpellslot(magicId, spellslotLvl, amount) VALUES(?, ?, ?)",
-                                    (magicId, spellslotLvl, amount))
+                amount = Db.int_input("How many of these slots does the class get: ")
+                Db.cursor.execute("INSERT INTO ClassSpellslot(magicId, spellslotLvl, amount) VALUES(?, ?, ?)",
+                                  (magicId, spellslotLvl, amount))
             else:
-                amount = self.int_input("How many of these slots does the class now have: ")
-                self.cursor.execute("UPDATE TABLE ClassSpellslot SET amount=" + str(amount) + " WHERE magicId=" +
-                                    str(magicId) + " AND spellslotLvl=" + str(spellslotLvl))
+                amount = Db.int_input("How many of these slots does the class now have: ")
+                Db.cursor.execute("UPDATE TABLE ClassSpellslot SET amount=" + str(amount) + " WHERE magicId=" +
+                                  str(magicId) + " AND spellslotLvl=" + str(spellslotLvl))
             addMore = self.add_another_item()
         print("All spellslots have been added\n")
 
@@ -824,8 +784,8 @@ class DatabaseSetup:
         addMore = input("Does the class gain any new spells from the previous level? (Y/N) ") == "Y"
         while addMore:
             spellId = input("Enter the name of the next new spell gained: ")
-            spellId = self.get_id(spellId, "Spell")
-            self.cursor.execute("INSERT INTO ClassSpell(magicId, spellId) VALUES (?, ?);", (magicId, spellId))
+            spellId = Db.get_id(spellId, "Spell")
+            Db.cursor.execute("INSERT INTO ClassSpell(magicId, spellId) VALUES (?, ?);", (magicId, spellId))
             addMore = self.add_another_item()
         print("All spells have been added\n")
 
@@ -848,19 +808,19 @@ class DatabaseSetup:
             nextTrait = input("Enter the name of the trait to add, CHOICE for a choice, or enter for none: ")
             if nextTrait == "CHOICE":
                 choiceOptionsId += 1
-                amnt = self.int_input("How many options are there: ")
-                picks = self.int_input("How many do they pick: ")
+                amnt = Db.int_input("How many options are there: ")
+                picks = Db.int_input("How many do they pick: ")
                 self.add_options_connection("Class", choiceOptionsId, class_id, subclass_id, picks)
                 for x in range(0, amnt):
                     nextTraitChoice = input("Enter the name of the next trait option: ")
-                    nextTraitChoice = self.get_id(nextTraitChoice, "Trait")
-                    self.cursor.execute("INSERT INTO ClassTraits(classOptionsId, traitId) VALUES(?, ?);",
-                                        (choiceOptionsId, nextTraitChoice))
+                    nextTraitChoice = Db.get_id(nextTraitChoice, "Trait")
+                    Db.cursor.execute("INSERT INTO ClassTraits(classOptionsId, traitId) VALUES(?, ?);",
+                                      (choiceOptionsId, nextTraitChoice))
 
             elif nextTrait != "":
-                nextTrait = self.get_id(nextTrait, "Trait")
-                self.cursor.execute("INSERT INTO ClassTraits(classOptionsId, traitId) VALUES(?, ?);",
-                                    (class_options_id, nextTrait))
+                nextTrait = Db.get_id(nextTrait, "Trait")
+                Db.cursor.execute("INSERT INTO ClassTraits(classOptionsId, traitId) VALUES(?, ?);",
+                                  (class_options_id, nextTrait))
                 addElement = self.add_another_item()
             else:
                 addElement = False
@@ -870,33 +830,8 @@ class DatabaseSetup:
 
     # ADD NON-CONNECTED ROWS
 
-    def add_spells(self):
-        """
-        Adds one or more spells to the database.
-        """
-        self.cursor.execute("SELECT COUNT(*) FROM Spell")
-        spellId = self.cursor.fetchone()[0]
-        addMore = True
-        while addMore:
-            spellId += 1
-            name = input("Enter the spell name: ")
-            level = self.int_input("Enter the spells' level: ")
-            castingTime = input("Enter the spells' casting time: ")
-            duration = input("Enter the spells' duration: ")
-            spellRange = self.int_input("Enter the spells' range: ")
-            area = input("Enter the spells' area if applicable, or press enter otherwise: ")
-            components = input("Enter the component initials, separated by a comma & space: ")
-            attackOrSave = input("Enter 'attack' if the spell attacks, or enter the first three capitalised letters and"
-                                 " ' save' of the saving throw's ability: ")
-            school = input("Enter the spells' magic school: ")
-            damageOrEffect = input("Enter the dice or number, and damage or effect type, of the spell: ")
-            description = input("Enter the spells' description: ")
-            self.add_spell(spellId, name, level, castingTime, duration, spellRange, components, attackOrSave, school,
-                           damageOrEffect, description, area)
-
-            addMore = self.add_another_item()
-
-    def add_spell(self, spell_id, name, level, casting_time, duration, spell_range, components, attack_or_save,
+    @staticmethod
+    def add_spell(spell_id, name, level, casting_time, duration, spell_range, components, attack_or_save,
                   school, damage_or_effect, description, area):
         """
         Adds a single spell to the database, adjusting the call based on available data.
@@ -932,28 +867,51 @@ class DatabaseSetup:
                       "attackOrSave, school, damageOrEffect, description) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
 
         if area != "":
-            self.cursor.execute(insertCall1, (spell_id, name, level, casting_time, duration,
-                                              spell_range, area, components, attack_or_save, school,
-                                              damage_or_effect, description))
+            Db.cursor.execute(insertCall1, (spell_id, name, level, casting_time, duration, spell_range, area,
+                                            components, attack_or_save, school, damage_or_effect, description))
         else:
-            self.cursor.execute(insertCall2, (spell_id, name, level, casting_time, duration,
-                                              spell_range, components, attack_or_save, school,
-                                              damage_or_effect, description))
+            Db.cursor.execute(insertCall2, (spell_id, name, level, casting_time, duration, spell_range, components,
+                                            attack_or_save, school, damage_or_effect, description))
+
+    def add_spells(self):
+        """
+        Adds one or more spells to the database.
+        """
+        Db.cursor.execute("SELECT COUNT(*) FROM Spell")
+        spellId = Db.cursor.fetchone()[0]
+        addMore = True
+        while addMore:
+            spellId += 1
+            name = input("Enter the spell name: ")
+            level = Db.int_input("Enter the spells' level: ")
+            castingTime = input("Enter the spells' casting time: ")
+            duration = input("Enter the spells' duration: ")
+            spellRange = Db.int_input("Enter the spells' range: ")
+            area = input("Enter the spells' area if applicable, or press enter otherwise: ")
+            components = input("Enter the component initials, separated by a comma & space: ")
+            attackOrSave = input("Enter 'attack' if the spell attacks, or enter the first three capitalised letters and"
+                                 " ' save' of the saving throw's ability: ")
+            school = input("Enter the spells' magic school: ")
+            damageOrEffect = input("Enter the dice or number, and damage or effect type, of the spell: ")
+            description = input("Enter the spells' description: ")
+            self.add_spell(spellId, name, level, castingTime, duration, spellRange, components, attackOrSave, school,
+                           damageOrEffect, description, area)
+
+            addMore = self.add_another_item()
 
     def add_proficiencies(self):
         """
         Adds one or more proficiencies to the database.
         """
-        self.cursor.execute("SELECT COUNT(*) FROM Proficiency")
-        proficiencyId = self.cursor.fetchone()[0]
+        Db.cursor.execute("SELECT COUNT(*) FROM Proficiency")
+        proficiencyId = Db.cursor.fetchone()[0]
         addMore = True
         while addMore:
             proficiencyId += 1
             proficiencyName = input("Enter the proficiency to add ")
             proficiencyType = input("Enter the proficiency type ")
-            self.cursor.execute(
-                "INSERT INTO Proficiency(proficiencyId, proficiencyName, proficiencyType) VALUES(?, ?, ?);",
-                (proficiencyId, proficiencyName, proficiencyType))
+            Db.cursor.execute("INSERT INTO Proficiency(proficiencyId, proficiencyName, proficiencyType) "
+                              "VALUES(?, ?, ?);", (proficiencyId, proficiencyName, proficiencyType))
 
             addMore = self.add_another_item()
 
@@ -961,13 +919,13 @@ class DatabaseSetup:
         """
         Adds one or more languages to the database.
         """
-        self.cursor.execute("SELECT COUNT(*) FROM Language")
-        languageId = self.cursor.fetchone()[0]
+        Db.cursor.execute("SELECT COUNT(*) FROM Language")
+        languageId = Db.cursor.fetchone()[0]
         addMore = True
         while addMore:
             languageId += 1
             language = input("Enter the language to add ")
-            self.cursor.execute("INSERT INTO Language(languageId, languageName) VALUES(?, ?);", (languageId, language))
+            Db.cursor.execute("INSERT INTO Language(languageId, languageName) VALUES(?, ?);", (languageId, language))
 
             addMore = self.add_another_item()
 
@@ -975,8 +933,8 @@ class DatabaseSetup:
         """
         Adds one or more pieces of equipment to the database.
         """
-        self.cursor.execute("SELECT COUNT(*) FROM Equipment")
-        equipmentId = self.cursor.fetchone()[0]
+        Db.cursor.execute("SELECT COUNT(*) FROM Equipment")
+        equipmentId = Db.cursor.fetchone()[0]
         addMore = True
         while addMore:
             equipmentId += 1
@@ -1006,6 +964,6 @@ class DatabaseSetup:
                 sqlParams += (pair[0],)
             sqlCall += sqlEnd + ");"
 
-            self.cursor.execute(sqlCall, sqlParams)
+            Db.cursor.execute(sqlCall, sqlParams)
 
             addMore = self.add_another_item()

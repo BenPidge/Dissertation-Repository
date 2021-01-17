@@ -1,7 +1,26 @@
-from Database import DatabaseSetup
+from Database import DatabaseSetup, DataExtractor, CoreDatabase
 
-db = DatabaseSetup.DatabaseSetup()
-db.setup_tables()
-db.print_all_added_data()
-db.add_item()
-db.complete_setup()
+
+dbSetup = DatabaseSetup.DatabaseSetup()
+extractor = DataExtractor.DataExtractor()
+
+
+def begin():
+    """
+    Begins the program.
+    """
+    print("Enter which menu you'd like to use:\n"
+          "1. Database Setup\n"
+          "2. Data Extractor\n"
+          "9. Exit")
+    menu = CoreDatabase.int_input("> ")
+    if menu == 1:
+        dbSetup.begin()
+    elif menu == 2:
+        extractor.begin()
+    else:
+        SystemExit(0)
+    CoreDatabase.complete_setup()
+
+
+begin()
