@@ -28,6 +28,23 @@ def complete_setup():
     connection.close()
 
 
+def view_tables():
+    """
+    Prints off the data of each table in the database.
+    """
+    cursor.execute("SELECT name FROM sqlite_master WHERE type = 'table';")
+    tables = cursor.fetchall()
+    output = ""
+    counter = 0
+    for table in sorted(tables):
+        output += table[0] + ", "
+        counter += 1
+        if counter == 6:
+            counter = 0
+            output = output[:-2] + "\n"
+    print(output)
+
+
 def get_id(name, table):
     """
     Gets the id of a row from their table and name.
@@ -40,3 +57,27 @@ def get_id(name, table):
     name = name.replace("'", "''")
     cursor.execute("SELECT " + table.lower() + "Id from " + table + " WHERE " + table.lower() + "Name='" + name + "'")
     return int(cursor.fetchone()[0])
+
+
+def getIdFromTable(table):
+    """
+    Converts a table string into an sql statement retrieving it's id.
+    :param table: the name of the table to convert
+    :type table: str
+    :return: a string that, if called as an SQL statement, retrieves all id's from the table
+    """
+    return "SELECT " + tableToId(table) + " FROM " + table
+
+
+def tableToId(table):
+    """
+    Converts a table string into it's id.
+    :param table: the name of the table to convert
+    :type table: str
+    :return: a string that states the id name of the table
+    """
+    if len(table) > 0:
+        tableId = table[:1].lower() + table[1:] + "Id"
+    else:
+        tableId = ""
+    return tableId

@@ -2,6 +2,7 @@ from Database import CoreDatabase as Db
 
 
 class DatabaseSetup:
+    """A class used in order to insert data into the database."""
     # CORE STATIC COMMANDS
 
     @staticmethod
@@ -75,7 +76,7 @@ class DatabaseSetup:
         if item_id is None:
             sqlCall = "DELETE FROM " + table + " WHERE " + table.lower() + "Name=" + name
         else:
-            sqlCall = "DELETE FROM " + table + " WHERE " + table.lower() + "Id=" + item_id
+            sqlCall = "DELETE FROM " + table + " WHERE " + Db.tableToId(table) + "=" + item_id
         Db.cursor.execute(sqlCall)
 
 
@@ -420,12 +421,12 @@ class DatabaseSetup:
         :type amnt_to_choose: int
         """
         sqlStart = "INSERT INTO " + connector_type + "Options(" + connector_type.lower() + "OptionsId, " \
-                   + connector_type.lower() + "Id"
+                   + Db.tableToId(connector_type)
         sqlEnd = "VALUES(?, ?"
         params = [options_id, connector_id]
 
         if subconnector_id > -1:
-            sqlStart += ", sub" + connector_type.lower() + "Id"
+            sqlStart += ", sub" + Db.tableToId(connector_type)
             sqlEnd += ", ?"
             params.append(subconnector_id)
         if amnt_to_choose > -1:
@@ -724,35 +725,35 @@ class DatabaseSetup:
         :param subclass_id: the unique identifier of the subclass required for the class to gain access to this, or -1
         :type subclass_id: int
         """
-        Db.cursor.execute("SELECT COUNT(*) FROM ClassMagic")
+        Db.cursor.execute("SELECT COUNT(*) FROM Magic")
         magicId = Db.cursor.fetchone()[0] + 1
         spellsPrepared = input("Are the spells prepared during a long rest? (Y/N) ") == "Y"
         cantripsKnown = Db.int_input("Enter how many cantrips are known at this stage: ")
         if spellsPrepared:
             knownCalc = input("Enter how the amount of spells are calculated: ")
             if subclass_id > -1:
-                Db.cursor.execute("INSERT INTO ClassMagic(magicId, classId, subclassId, spellsPrepared, knownCalc, "
+                Db.cursor.execute("INSERT INTO Magic(magicId, classId, subclassId, spellsPrepared, knownCalc, "
                                   "lvl, cantripsKnown) VALUES(?, ?, ?, ?, ?, ?, ?);",
                                   (magicId, class_id, subclass_id, spellsPrepared, knownCalc, lvl, cantripsKnown))
             else:
-                Db.cursor.execute("INSERT INTO ClassMagic(magicId, classId, spellsPrepared, knownCalc, lvl, "
+                Db.cursor.execute("INSERT INTO Magic(magicId, classId, spellsPrepared, knownCalc, lvl, "
                                   "cantripsKnown) VALUES(?, ?, ?, ?, ?, ?);",
                                   (magicId, class_id, spellsPrepared, knownCalc, lvl, cantripsKnown))
         else:
             amntKnown = Db.int_input("Enter how many spells are known at this stage: ")
             if subclass_id > -1:
-                Db.cursor.execute("INSERT INTO ClassMagic(magicId, classId, subclassId, spellsPrepared, knownCalc, "
+                Db.cursor.execute("INSERT INTO Magic(magicId, classId, subclassId, spellsPrepared, knownCalc, "
                                   "amntKnown, lvl, cantripsKnown) VALUES(?, ?, ?, ?, ?, ?, ?, ?);",
                                   (magicId, class_id, subclass_id, spellsPrepared, "ALL",
                                    amntKnown, lvl, cantripsKnown))
             else:
-                Db.cursor.execute("INSERT INTO ClassMagic(magicId, classId, spellsPrepared, knownCalc, amntKnown, lvl"
+                Db.cursor.execute("INSERT INTO Magic(magicId, classId, spellsPrepared, knownCalc, amntKnown, lvl"
                                   ", cantripsKnown) VALUES(?, ?, ?, ?, ?, ?, ?);",
                                   (magicId, class_id, spellsPrepared, "ALL", amntKnown, lvl, cantripsKnown))
 
         # If it's not the first level, add all previous spells and slots to the class magic
         if lvl > 1:
-            Db.cursor.execute("SELECT magicId FROM ClassMagic WHERE lvl=" + str(lvl - 1) +
+            Db.cursor.execute("SELECT magicId FROM Magic WHERE lvl=" + str(lvl - 1) +
                               " AND classId=" + str(class_id))
             prevMagicId = str(Db.cursor.fetchone()[0])
             Db.cursor.execute("SELECT spellslotLvl, amount FROM ClassSpellslot WHERE magicId=" + prevMagicId)
@@ -814,12 +815,12 @@ class DatabaseSetup:
                 for x in range(0, amnt):
                     nextTraitChoice = input("Enter the name of the next trait option: ")
                     nextTraitChoice = Db.get_id(nextTraitChoice, "Trait")
-                    Db.cursor.execute("INSERT INTO ClassTraits(classOptionsId, traitId) VALUES(?, ?);",
+                    Db.cursor.execute("INSERT INTO ClassTrait(classOptionsId, traitId) VALUES(?, ?);",
                                       (choiceOptionsId, nextTraitChoice))
 
             elif nextTrait != "":
                 nextTrait = Db.get_id(nextTrait, "Trait")
-                Db.cursor.execute("INSERT INTO ClassTraits(classOptionsId, traitId) VALUES(?, ?);",
+                Db.cursor.execute("INSERT INTO ClassTrait(classOptionsId, traitId) VALUES(?, ?);",
                                   (class_options_id, nextTrait))
                 addElement = self.add_another_item()
             else:

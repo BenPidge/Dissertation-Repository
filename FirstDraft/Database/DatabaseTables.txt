@@ -313,9 +313,9 @@ CREATE TABLE IF NOT EXISTS `ClassProficiency` (
 
 
 -- -----------------------------------------------------
--- Table `ClassMagic`
+-- Table `Magic`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `ClassMagic` (
+CREATE TABLE IF NOT EXISTS `Magic` (
   `magicId` INT UNSIGNED NOT NULL,
   `classId` INT UNSIGNED NOT NULL,
   `spellsPrepared` TINYINT(1) NOT NULL,
@@ -345,7 +345,7 @@ CREATE TABLE IF NOT EXISTS `ClassSpell` (
   PRIMARY KEY (`magicId`, `spellId`),
     CONSTRAINT `magicId`
     FOREIGN KEY (`magicId`)
-    REFERENCES `ClassMagic` (`magicId`)
+    REFERENCES `Magic` (`magicId`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `spellId`
@@ -375,9 +375,9 @@ CREATE TABLE IF NOT EXISTS `ClassLanguage` (
 
 
 -- -----------------------------------------------------
--- Table `ClassTraits`
+-- Table `ClassTrait`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `ClassTraits` (
+CREATE TABLE IF NOT EXISTS `ClassTrait` (
   `classOptionsId` INT UNSIGNED NOT NULL,
   `traitId` INT UNSIGNED NOT NULL,
   PRIMARY KEY (`classOptionsId`, `traitId`),
@@ -403,7 +403,7 @@ CREATE TABLE IF NOT EXISTS `ClassSpellslot` (
   PRIMARY KEY (`magicId`, `spellslotLvl`),
   CONSTRAINT `magicId`
     FOREIGN KEY (`magicId`)
-    REFERENCES `ClassMagic` (`magicId`)
+    REFERENCES `Magic` (`magicId`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 
