@@ -73,14 +73,24 @@ class Character:
 
 class Background:
     """A class representing a character's background."""
-    def __init__(self, proficiencies, languages):
+    def __init__(self, name, proficiencies, languages):
         """
         Sets up the core data the background contains.
+        :param name: The name of the background
+        :type name: str
         :param proficiencies: The proficiencies this background provides.
         :type proficiencies: list
         :param languages: The languages this background provides.
         :type languages: list
         """
+        self.name = name
         self.proficiencies = proficiencies
         self.languages = languages
+
+    def __str__(self):
+        output = f"The background is {self.name}:\n" \
+                 f"It gives the proficiencies: {', '.join(self.proficiencies)}\n"
+        if len(self.languages) > 0:
+            output += f"It gives the languages: {', '.join(self.languages)}"
+        return output
 

@@ -83,15 +83,15 @@ CREATE TABLE IF NOT EXISTS `RaceOptions` (
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `RaceLanguage` (
   `raceOptionsId` INT UNSIGNED NOT NULL,
-  `language` INT NOT NULL,
-  PRIMARY KEY (`raceOptionsId`, `language`),
+  `languageId` INT NOT NULL,
+  PRIMARY KEY (`raceOptionsId`, `languageId`),
     CONSTRAINT `raceOptionsId`
     FOREIGN KEY (`raceOptionsId`)
     REFERENCES `RaceOptions` (`raceOptionsId`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `languageId`
-    FOREIGN KEY (`language`)
+    FOREIGN KEY (`languageId`)
     REFERENCES `Language` (`languageId`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
@@ -360,15 +360,15 @@ CREATE TABLE IF NOT EXISTS `ClassSpell` (
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `ClassLanguage` (
   `classOptionsId` INT UNSIGNED NOT NULL,
-  `language` INT UNSIGNED NOT NULL,
-  PRIMARY KEY (`classOptionsId`, `language`),
+  `languageId` INT UNSIGNED NOT NULL,
+  PRIMARY KEY (`classOptionsId`, `languageId`),
     CONSTRAINT `classOptionsId`
     FOREIGN KEY (`classOptionsId`)
     REFERENCES `ClassOptions` (`classOptionsId`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `languageId`
-    FOREIGN KEY (`language`)
+    FOREIGN KEY (`languageId`)
     REFERENCES `Language` (`languageId`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
