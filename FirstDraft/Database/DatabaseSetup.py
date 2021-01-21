@@ -73,7 +73,7 @@ def remove_item(table, item_id=None, name=None):
     if item_id is None:
         sqlCall = "DELETE FROM " + table + " WHERE " + table.lower() + "Name=" + name
     else:
-        sqlCall = "DELETE FROM " + table + " WHERE " + Db.tableToId(table) + "=" + item_id
+        sqlCall = "DELETE FROM " + table + " WHERE " + Db.table_to_id(table) + "=" + item_id
     Db.cursor.execute(sqlCall)
 
 
@@ -424,12 +424,12 @@ def add_options_connection(connector_type, options_id, connector_id, subconnecto
     :type amnt_to_choose: int
     """
     sqlStart = "INSERT INTO " + connector_type + "Options(" + connector_type.lower() + "OptionsId, " \
-               + Db.tableToId(connector_type)
+               + Db.table_to_id(connector_type)
     sqlEnd = "VALUES(?, ?"
     params = [options_id, connector_id]
 
     if subconnector_id > -1:
-        sqlStart += ", sub" + Db.tableToId(connector_type)
+        sqlStart += ", sub" + Db.table_to_id(connector_type)
         sqlEnd += ", ?"
         params.append(subconnector_id)
     if amnt_to_choose > -1:

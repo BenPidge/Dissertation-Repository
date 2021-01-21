@@ -2,7 +2,7 @@
 class Class:
     """A python class representing a character's class."""
     def __init__(self, name, traits, proficiencies, equipment, main_ability, second_ability, hit_dice,
-                 magic=None, languages=None, level=1, subclass=None):
+                 languages, level, magic=None, subclass=None):
         """
 
         :param name: The name of the class
@@ -28,6 +28,8 @@ class Class:
         :param subclass: A Class object representing the subclass of the current class.
         :type subclass: Class, optional
         """
+        if languages is None:
+            languages = []
         self.name = name
         self.traits = traits
         self.proficiencies = proficiencies
@@ -38,8 +40,6 @@ class Class:
         self.magic = magic
         self.languages = languages
         self.level = level
-        if languages is None:
-            self.languages = []
 
         if subclass is not None:
             self.extract_subclass(subclass)

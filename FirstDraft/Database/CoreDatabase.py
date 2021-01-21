@@ -59,17 +59,17 @@ def get_id(name, table):
     return int(cursor.fetchone()[0])
 
 
-def getIdFromTable(table):
+def get_id_from_table(table):
     """
     Converts a table string into an sql statement retrieving it's id.
     :param table: the name of the table to convert
     :type table: str
     :return: a string that, if called as an SQL statement, retrieves all id's from the table
     """
-    return "SELECT " + tableToId(table) + " FROM " + table
+    return "SELECT " + table_to_id(table) + " FROM " + table
 
 
-def tableToId(table):
+def table_to_id(table):
     """
     Converts a table string into it's id.
     :param table: the name of the table to convert

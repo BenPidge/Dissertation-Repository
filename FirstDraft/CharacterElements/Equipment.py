@@ -3,17 +3,20 @@ class Equipment:
 
     # a static dictionary that stores all the equipment item names within their appropriate tags.
     tagGroups = {
-        "Ammunition": [], "Arcane focus": [], "Artisan's tools": [], "Container": [], "Druidic focus": [],
-        "Equipment pack": [], "Finesse": [], "Gaming set": [], "Heavy": [], "Heavy Armor": [],
-        "Holy symbol": [], "Light": [], "Light Armor": [], "Loading": [], "Martial Weapon": [], "Medium Armor": [],
-        "Musical instrument": [], "Range": [], "Reach": [], "Simple Weapon": [], "Special": [],
-        "Stealth Disadvantage": [], "Str Limit": [], "Thrown": [], "Tools": [], "Two-Handed": [], "Versatile": []
+        "Ammunition": [], "Arcane focus": [], "Armor": [], "Artisan's tools": [], "Bludgeoning": [],  "Combat": [],
+        "Communication": [], "Consumable": [], "Container": [], "Control": [], "Currency": [], "Damage": [],
+        "Deception": [], "Detection": [], "Druidic focus": [], "Exploration": [], "Finesse": [], "Gaming set": [],
+        "Healing": [], "Heavy": [], "Heavy armor": [], "Holy symbol": [], "Light": [], "Light armor": [], "Loading": [],
+        "Martial": [], "Medium armor": [], "Melee": [], "Metal": [], "Movement": [], "Outerwear": [], "Instrument": [],
+        "Piercing": [], "Ranged": [], "Reach": [], "Simple": [], "Special": [], "Slashing": [], "Social": [],
+        "Stealth disadv": [], "Str limit": [], "Thrown": [], "Two-handed": [], "Utility": [], "Versatile": [],
+        "Warding": []
     }
     # a static array holding each equipment object, to avoid the need for repeated objects
     allEquipment = []
 
     def __init__(self, name, tags, description,
-                 dice=None, item_range=None, armor_class=0, str_limit=0, weight=0, value="0cp"):
+                 dice="d", armor_class=0, weight=0, value="0cp", str_limit=0, item_range=None):
         """
         Stores all the data for a piece of equipment.
         :param name: The name of the equipment.
@@ -41,7 +44,10 @@ class Equipment:
         self.name = name
         self.tags = tags
         self.description = description
-        self.dice = dice
+        if dice != "d":
+            self.dice = dice
+        else:
+            self.dice = None
         self.armorClass = armor_class
         self.strLimit = str_limit
         self.weight = weight
@@ -55,6 +61,21 @@ class Equipment:
         for tag in self.tags:
             Equipment.tagGroups[tag] = Equipment.tagGroups[tag] + [self.name]
 
+    def __str__(self):
+        output = f"{self.name} is worth {self.value}, and weighs {self.weight}lb.\n" \
+                 f"It has the tags: {', '.join(self.tags)}.\n"
+        if self.description != 0:
+            output += f"{self.description}\n"
+        if self.dice is not None:
+            output += f"Using it involves rolling {self.dice}."
+        if self.armorClass != 0:
+            output += f"It provides {self.armorClass}AC."
+        if self.strLimit > 0:
+            output += f"Using it without penalty requires a strength of {self.strLimit} or higher."
+        if self.range != [5, 5]:
+            output += f"It has a range of {self.range[0]}, or {self.range[1]} with disadvantage."
+        return output
+
 
 def get_all_equipment():
     """
@@ -64,9 +85,31 @@ def get_all_equipment():
     return Equipment.allEquipment
 
 
+def get_equipment(equipment_name):
+    """
+    Returns the object of an equipment from it's name.
+    :param equipment_name: the name of the equipment to return
+    :type equipment_name: str
+    :return: the equipment object matching the name
+    """
+    for equipment in Equipment.allEquipment:
+        if equipment.name == equipment_name:
+            return equipment
+    return
+
+
 def get_tag_group(tag):
     """
     Returns a specified tag array from the tagGroups class variable
     :return an array of strings
     """
     return Equipment.tagGroups.get(tag)
+
+
+def get_all_tags():
+    """
+    Returns all tags that have their grouped equipments stored.
+    :return: an array of tag strings
+    """
+    return Equipment.tagGroups.keys()
+

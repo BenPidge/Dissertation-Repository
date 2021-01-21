@@ -1,9 +1,6 @@
 from Database import DatabaseSetup, DataExtractor, CoreDatabase, DataConverter
 
 
-dbSetup = DatabaseSetup.DatabaseSetup()
-
-
 def begin():
     """
     Begins the program.
@@ -15,8 +12,9 @@ def begin():
           "4. View Tables\n"
           "9. Exit")
     menu = CoreDatabase.int_input("> ")
+    DataConverter.create_all_equipment()
     if menu == 1:
-        dbSetup.begin()
+        DatabaseSetup.begin()
     elif menu == 2:
         DataExtractor.begin()
     elif menu == 3:
