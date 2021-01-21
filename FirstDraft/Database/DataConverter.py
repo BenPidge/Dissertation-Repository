@@ -14,18 +14,44 @@ def make_choice(num_of_choices, choices):
     :return: a list of the choices selected
     """
     output = []
-    if num_of_choices == len(choices):
+    if num_of_choices >= len(choices):
         output = choices
     else:
+        choiceCount = []
+        choiceDict = dict()
+
+        # converts any list choices into a single string, directing a dictionary to the list of objects
+        for x in range(0, len(choices)):
+            if type(choices[x]) is list:
+                fullStr = ""
+                for y in list({i: choices[x].count(i) for i in choices[x]}.items()):
+                    fullStr += f"({str(y[1])}x) {str(y[0])}\n"
+                choiceDict.update({fullStr: choices[x]})
+            else:
+                choiceCount.append(choices[x])
+
+        # puts all single-object choices into the dictionary,
+        # linking their string to the appropriate amount of the object
+        choiceCount = list({i: choiceCount.count(i) for i in choiceCount}.items())
+        for z in range(0, len(choiceCount)):
+            objects = []
+            for l in range(0, choiceCount[z][1]):
+                objects.append(choiceCount[z][0])
+            choiceDict.update({f"({choiceCount[z][1]}x) {str(choiceCount[z][0])}": objects})
+
+        # lists their options
         while len(output) < num_of_choices:
             print("Choose one from: ")
-            for x in range(0, len(choices)):
-                print(f"{x+1}. {choices[x]}")
+            counter = 0
+            for key in list(choiceDict.keys()):
+                counter += 1
+                print(str(counter) + ".\n" + key)
+
             nextAddition = Db.int_input(">") - 1
-            if nextAddition < len(choices):
-                output.append(choices[nextAddition])
-                choices.pop(nextAddition)
-    return output
+            if nextAddition < len(choiceDict.keys()):
+                output.append(list(choiceDict.values())[nextAddition])
+                choiceDict.pop(list(choiceDict.keys())[nextAddition])
+    return list(*output)
 
 
 
@@ -119,26 +145,38 @@ def create_equipment(class_name):
     optionsData = DataExtractor.equipment_connections(Db.get_id(class_name, "Class"))
     equipment = []
     for option in optionsData:
-        equipment += create_equipment_option(option)
+        equipment += create_equipment_option(option)[1]
     return equipment
 
 
 def create_equipment_option(option):
+    """
+    Creates a single equipment option set.
+    :param option: a list of metadata and objects in the option,
+    in the layout [[isChoice boolean, [optional subsection]], [equipment objects]]
+    :return: whether the option was a choice, and a list of the equipment objects selected
+    """
     metadata, items = option
+    itemChoices = items
     if len(metadata) > 1:
         for subsection in metadata[1:]:
-            items += create_equipment_option(subsection)
+            choice, subsectionVal = create_equipment_option(subsection)
+            items += subsectionVal
+            if choice is False:
+                for x in range(0, len(subsectionVal)):
+                    itemChoices.remove(subsectionVal[x])
+                itemChoices.append(subsectionVal)
 
     if metadata[0] is True:
-        equipment = make_choice(1, items)
+        equipment = make_choice(1, itemChoices)
     else:
         equipment = items
-    return equipment
+    return metadata[0], equipment
 
 
 
 def begin():
-    output = create_equipment("Barbarian")
+    output = create_equipment("Bard")
     for item in output:
         print(item.name)
 

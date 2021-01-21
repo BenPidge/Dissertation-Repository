@@ -1,4 +1,4 @@
-from Database import CoreDatabase as Db
+from Database import CoreDatabase as Db, DataConverter
 from CharacterElements import Equipment
 import re
 
@@ -206,46 +206,13 @@ def begin():
             print(output)
         print("\n")
 
-
-    Db.cursor.execute("INSERT INTO EquipmentOption(equipOptionId, classId, hasChoice) VALUES(?, ?, ?);",
-                      (102, 2, 1))
-    Db.cursor.execute("INSERT INTO EquipmentOption(equipOptionId, classId, hasChoice, suboption) VALUES (?, ?, ?, ?);",
-                      (103, 2, 1, 102))
-    Db.cursor.execute("INSERT INTO EquipmentIndivOption(equipmentId, equipmentOptionId, amnt) VALUES(?, ?, ?);",
-                      (Db.get_id("Rapier", "Equipment"), 102, 1))
-    Db.cursor.execute("INSERT INTO EquipmentIndivOption(equipmentId, equipmentOptionId, amnt) VALUES(?, ?, ?);",
-                      (Db.get_id("Longsword", "Equipment"), 102, 1))
-    for item in Equipment.get_tag_group("Simple"):
-        Db.cursor.execute("INSERT INTO EquipmentIndivOption(equipmentId, equipmentOptionId, amnt) VALUES(?, ?, ?);",
-                          (Db.get_id(item, "Equipment"), 103, 1))
-
-    Db.cursor.execute("INSERT INTO EquipmentOption(equipOptionId, classId, hasChoice) VALUES(?, ?, ?);",
-                      (104, 2, 1))
-    Db.cursor.execute("INSERT INTO EquipmentIndivOption(equipmentId, equipmentOptionId, amnt) VALUES(?, ?, ?);",
-                      (Db.get_id("Diplomat's pack", "Equipment"), 104, 1))
-    Db.cursor.execute("INSERT INTO EquipmentIndivOption(equipmentId, equipmentOptionId, amnt) VALUES(?, ?, ?);",
-                      (Db.get_id("Entertainer's pack", "Equipment"), 104, 1))
-
-    Db.cursor.execute("INSERT INTO EquipmentOption(equipOptionId, classId, hasChoice) VALUES(?, ?, ?);",
-                      (105, 2, 1))
-    for item in Equipment.get_tag_group("Instrument"):
-        Db.cursor.execute("INSERT INTO EquipmentIndivOption(equipmentId, equipmentOptionId, amnt) VALUES(?, ?, ?);",
-                          (Db.get_id(item, "Equipment"), 105, 1))
-
-    Db.cursor.execute("INSERT INTO EquipmentOption(equipOptionId, classId, hasChoice) VALUES(?, ?, ?);",
-                      (106, 2, 0))
-    Db.cursor.execute("INSERT INTO EquipmentIndivOption(equipmentId, equipmentOptionId, amnt) VALUES(?, ?, ?);",
-                      (Db.get_id("Leather armor", "Equipment"), 106, 1))
-    Db.cursor.execute("INSERT INTO EquipmentIndivOption(equipmentId, equipmentOptionId, amnt) VALUES(?, ?, ?);",
-                      (Db.get_id("Dagger", "Equipment"), 106, 1))
-
-
-    print("\n\n")
-    first_result = equipment_connections(Db.get_id("Cleric", "Class"))
-    for group in first_result:
-        print(group)
+    Db.cursor.execute("SELECT equipOptionId FROM EquipmentOption")
+    print(Db.cursor.fetchall()[-1][0])
 
 
 
 
+    output = DataConverter.create_equipment("Wizard")
+    for p in output:
+        print(p.name)
 
