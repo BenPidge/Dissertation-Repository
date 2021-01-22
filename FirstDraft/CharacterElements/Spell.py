@@ -1,5 +1,11 @@
+from Database import DataExtractor
+
+
 class Spell:
     """A class used to represent a singular spell."""
+
+    # all spells currently built in the system
+    builtSpells = []
 
     def __init__(self, name, level, casting_time, duration, spell_range, components, school, tags, description,
                  damage=None, attack=None, save=None, area=None, chr_level=1):
@@ -51,6 +57,7 @@ class Spell:
         self.__chrLevel = chr_level
 
         self.cantrip_damage()
+        self.builtSpells.append(self)
 
     def update_chr_level(self, new_level):
         """
@@ -63,7 +70,7 @@ class Spell:
 
     def cantrip_damage(self):
         """Calculates the damage the spell does, providing it's a cantrip, based on the character level."""
-        if self.level == 0:
+        if self.level == 0 and self.damage is not None:
             if self.__chrLevel < 5:
                 damage = 1
             elif 5 <= self.__chrLevel < 11:
@@ -74,7 +81,7 @@ class Spell:
                 damage = 4
             self.damage = str(damage) + self.damage[1:]
 
-    def to_string(self):
+    def __str__(self):
         """
         Returns the data of the spells as a string
         :return: a string stating the spell data
@@ -95,3 +102,28 @@ class Spell:
                 details += "It required a {} spell save. ".format(self.save)
             details += "It deals {} damage.\n".format(self.damage)
         return details
+
+
+def get_spell(spell_name, chr_level=1):
+    """
+    Gets a specified spell from the array of built spells, or adds it if it currently isn't in there.
+    This is done to save building a substantial amount of objects for each spell.
+    :param spell_name: the name of the spell to return
+    :type spell_name: str
+    :param chr_level: the level of the current character, relevant for cantrips
+    :type chr_level: int
+    :return: the spell object, pointed to from the array
+    """
+    # determines if the spell is built
+    spellIndex = -1
+    spellArray = Spell.builtSpells
+    for x in range(0, len(spellArray)):
+        if spellArray[x].name == spell_name:
+            spellIndex = x
+
+    if spellIndex == -1:
+        Spell.builtSpells.append(Spell(*DataExtractor.spell_info(spell_name, chr_level)))
+        spellIndex = len(Spell.builtSpells) - 1
+
+    return Spell.builtSpells[spellIndex]
+

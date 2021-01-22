@@ -60,11 +60,7 @@ class Class:
                 setattr(self, key, subclassDict[key])
 
         if subclass.magic is not None:
-            if self.magic is None:
-                self.magic = subclass.magic
-            else:
-                self.magic.knownSpells = self.magic.knownSpells + subclass.magic.knownSpells
-                self.magic.preparedSpellOptions = self.magic.preparedSpellOptions + subclass.magic.preparedSpellOptions
+            self.magic = subclass.magic
 
     def get_data(self):
         """
@@ -91,28 +87,68 @@ class Class:
 
 class ClassMagic:
     """A class representing all details of magic that a character class might require."""
-    def __init__(self, spell_amount, spell_slot, are_spells_prepared, prepared_spell_options=None, known_spells=None):
+    def __init__(self, spell_slot, are_spells_prepared, spell_amount=-1, known_spells=None,
+                 prepared_spell_calculation=None, prepared_spell_options=None):
         """
         Stores all the core information on a classes magic.
-        :param spell_amount: The amount of spells that the class should have at any one time.
-        :type spell_amount: int
         :param spell_slot: The spell slot level, linked to the amount of these spell slots available at the class level.
         :type spell_slot: dict
         :param are_spells_prepared: Stating whether spells are prepared or selected at levels/
         :type are_spells_prepared: bool
-        :param prepared_spell_options: Spells that can be prepared and unprepared during long rests.
-        :type prepared_spell_options: list, optional
+        :param spell_amount: The amount of spells that the class should have at any one time, or -1 to show more info is
+                             required to calculate this.
+        :type spell_amount: int, optional
         :param known_spells: Spells that are always known at any one time.
         :type known_spells: list, optional
+        :param prepared_spell_calculation: States how the spells are prepared
+        :type prepared_spell_calculation: str, optional
+        :param prepared_spell_options: Spells that can be prepared and unprepared during long rests.
+        :type prepared_spell_options: list, optional
         """
         self.spellAmount = spell_amount
         self.spellSlot = spell_slot
         self.knownSpells = known_spells
         self.areSpellsPrepared = are_spells_prepared
+        self.preparedSpellCalculation = prepared_spell_calculation
         self.preparedSpellOptions = prepared_spell_options
 
         if known_spells is None:
             self.knownSpells = []
         if prepared_spell_options is None:
             self.preparedSpellOptions = []
+
+
+    def __str__(self):
+        string = f"They have "
+        for (level, amnt) in self.spellSlot.items():
+            if level < 4:
+                multiple = ["st", "nd", "rd"]
+                multiple = multiple[level-1]
+            else:
+                multiple = "th"
+            string += f"{str(amnt)} {str(level)}{multiple}-Level spellslots, "
+        string = string[:-2] + "\n"
+
+        string += "They know the cantrips: "
+        for x in range(0, len(self.knownSpells)):
+            if self.knownSpells[x].level == 0:
+                string += self.knownSpells[x].name + ", "
+        string = string[:-2] + ".\n"
+
+        string += "They know the spells: "
+        for x in range(0, len(self.knownSpells)):
+            if self.knownSpells[x].level > 0:
+                string += self.knownSpells[x].name + ", "
+        string = string[:-2] + ".\n"
+
+        if self.preparedSpellCalculation is not None:
+            if self.spellAmount > -1:
+                string += f"They know {self.spellAmount} spells.\n"
+            else:
+                string += "They known spells equal to " + self.preparedSpellCalculation + ".\n"
+            string += "They can prepare the spells: "
+            for x in range(0, len(self.preparedSpellOptions)):
+                string += self.preparedSpellOptions[x].name + ", "
+            string = string[:-2] + "."
+        return string
 

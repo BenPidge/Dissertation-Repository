@@ -19,9 +19,9 @@ def get_names_from_connector(start_table, end_table, input_id=-1, input_name="")
     :param end_table: the name of the table the connection travels to
     :type end_table: str
     :param input_id: the id of the row to travel from in the start table. This or input_name must not be default
-    :type input_id: int
+    :type input_id: int, optional
     :param input_name: the name of the row to travel from in the start table. This or input_id must not be default
-    :type input_name: str
+    :type input_name: str, optional
     :return: an array of the names assigned within the rows pulled from the end table
     """
     # retrieves the id, if not provided
@@ -79,13 +79,52 @@ def background_connections(background_name):
     return [toolAmnt, tools], [skillAmnt, skills], [languageAmnt, languages]
 
 
+def create_class_magic(class_name, class_lvl, subclass_name=""):
+    """
+    Retrieves the magic associated with a class at a given level.
+    :param class_name: the name of the class to create the magic for
+    :type class_name: str
+    :param class_lvl: the level to get the classes magic at
+    :type class_lvl: int
+    :param subclass_name: the name of the subclass to receive magic for
+    :type subclass_name: str, optional
+    :return: the data required to choose all of the classes magic, in 2 arrays & a dictionary, with the format:
+    [no of cantrips, no of spells, spells prepared boolean, amount of spells known calculation],
+    [spell names], (spellslot level: num of spellslot) dictionary
+    """
+    Db.cursor.execute(f"SELECT magicId, spellsPrepared, knownCalc, amntKnown, cantripsKnown FROM Magic "
+                      f"WHERE classId={Db.get_id(class_name, 'Class')} AND lvl={class_lvl} AND subclassId IS NULL")
+    magicId, spellsPrepared, knownCalc, amntKnown, cantripsKnown = Db.cursor.fetchone()
+
+    Db.cursor.execute(f"SELECT spellslotLvl, amount FROM ClassSpellslot WHERE magicId={str(magicId)}")
+    spellslots = dict()
+    for pair in Db.cursor.fetchall():
+        spellslots.update({pair[0]: pair[1]})
+
+    spells = get_names_from_connector("Magic", "Spell", magicId)
+
+    subclassSpells = []
+    if subclass_name != "":
+        Db.cursor.execute(f"SELECT magicId, spellsPrepared, knownCalc, amntKnown FROM Magic WHERE "
+                          f"classId={Db.get_id(class_name, 'Class')} AND lvl={class_lvl} AND "
+                          f"subclassId={Db.get_id(subclass_name, 'Subclass')}")
+        magicId, spellsPrepared, knownCalc, amntKnown = Db.cursor.fetchone()
+
+        Db.cursor.execute(f"SELECT spellslotLvl, amount FROM ClassSpellslot WHERE magicId= + {str(magicId)}")
+        for pair in Db.cursor.fetchall():
+            spellslots.update({pair[0]: pair[1]})
+
+        subclassSpells = get_names_from_connector("Magic", "Spell", magicId)
+    return [cantripsKnown, amntKnown, spellsPrepared, knownCalc], spells, spellslots, subclassSpells
+
+
 def class_options_connections(class_options_id, subclass_id=-1):
     """
     Returns the names of the options that the ClassOptions offers, and ClassOptions data.
     :param class_options_id: the id of the ClassOptions to pull data from
     :type class_options_id: int
     :param subclass_id: the id of the subclass to include checks for, if appropriate
-    :type subclass_id: int
+    :type subclass_id: int, optional
     :return: the level required and amount to choose in an array, and an array of the choices
     """
     # retrieve all data related to the ClassOptions
@@ -192,27 +231,56 @@ def equipment_items():
     return allEquipment
 
 
+def spell_info(spell_name, chr_level=1):
+    """
+    Get all the appropriate info for a spell from the name.
+    :param spell_name: the name of the spell to fetch
+    :type spell_name: str
+    :param chr_level: the level of the character, relevant for cantrips, and 1 by default
+    :type chr_level: int, optional
+    :return: all the required data for a spell object, in parameter order
+    """
+    Db.cursor.execute("SELECT * FROM Spell WHERE spellName='" + spell_name.replace("'", "''") + "'")
+    lvl, castingTime, duration, sRange, area, components, atOrSave, school, damOrEffect, desc = Db.cursor.fetchone()[2:]
+    damage, attack, save = None, None, None
+
+    # converts damOrEffect into the damage and the tags
+    tags = damOrEffect.split(", ")
+    if damOrEffect[0].isdigit():
+        damage = tags[0]
+        tags.pop(0)
+
+    # separates atOrSave into it's appropriate variable
+    if "Save" in atOrSave:
+        save = atOrSave
+    elif atOrSave is not None:
+        attack = atOrSave
+
+    return spell_name, lvl, castingTime, duration, sRange, components, school,\
+        tags, desc, damage, attack, save, area, chr_level
+
+
 
 def begin():
     """
     Begins the use of the data extraction.
     """
     for x in ["Barbarian", "Bard", "Cleric", "Druid", "Fighter", "Monk", "Paladin", "Ranger", "Rogue", "Sorcerer", "Warlock", "Wizard"]:
-        Db.cursor.execute("SELECT classOptionsId FROM ClassOptions WHERE classId=" + str(Db.get_id(x, "Class")) + " AND subclassId IS NULL")
-        ids = Db.cursor.fetchall()
-        print("Values for " + x)
-        for nextId in ids:
-            output = class_options_connections(nextId[0])
-            print(output)
+        metadata, spells, spellslots = create_class_magic(x, 1)
+        print(x)
+        print(metadata)
+        print("Spells: " + ", ".join(spells))
+        for pair in list(spellslots.items()):
+            print(f"They have {pair[1]} {pair[0]}st level spellslots")
         print("\n")
 
-    Db.cursor.execute("SELECT equipOptionId FROM EquipmentOption")
-    print(Db.cursor.fetchall()[-1][0])
+    metadata, spells, spellslots = create_class_magic("Cleric", 1, "Light Domain")
+    print("Light Domain")
+    print(metadata)
+    print("Spells: " + ", ".join(spells))
+    for pair in list(spellslots.items()):
+        print(f"They have {pair[1]} {pair[0]}st level spellslots")
+    print("\n")
 
-
-
-
-    output = DataConverter.create_equipment("Wizard")
-    for p in output:
-        print(p.name)
+    spell_info("Ensnaring Strike")
 

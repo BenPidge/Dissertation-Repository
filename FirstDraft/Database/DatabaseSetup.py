@@ -419,9 +419,9 @@ def add_options_connection(connector_type, options_id, connector_id, subconnecto
     :param connector_id: the unique identifier for the row to add options to
     :type connector_id: int
     :param subconnector_id: the id of the subrace or subclass it connects to, if appropriate
-    :type subconnector_id: int
+    :type subconnector_id: int, optional
     :param amnt_to_choose: the amount of these options they choose, if a choice must be made
-    :type amnt_to_choose: int
+    :type amnt_to_choose: int, optional
     """
     sqlStart = "INSERT INTO " + connector_type + "Options(" + connector_type.lower() + "OptionsId, " \
                + Db.table_to_id(connector_type)
@@ -464,7 +464,7 @@ def add_equipment_point(connector_type, connector_id, path=""):
     :param connector_id: the id of the class or background it connects to
     :type connector_id: int
     :param path: illustrates the recursion path taken to reach the current point
-    :type path: str
+    :type path: str, optional
     :return the integer value of how many equipmentOptions there are now
     """
     Db.cursor.execute("SELECT COUNT(*) FROM EquipmentOption")
@@ -601,7 +601,7 @@ def add_language_connection(connector_type, connector_id, options_id, subconnect
     :param options_id: the current amount of global options of the connector
     :type options_id: int
     :param subconnector_id: the id of the subrace or subclass it connects to, if appropriate
-    :type subconnector_id: int
+    :type subconnector_id: int, optional
     :return: the new current amount of global options of the connector
     """
     addElement = True
@@ -640,7 +640,7 @@ def add_proficiency_connection(connector_type, connector_id, options_id, subconn
     :param options_id: the current amount of global options of the connector
     :type options_id: int
     :param subconnector_id: the id of the subrace or subclass it connects to, if appropriate
-    :type subconnector_id: int
+    :type subconnector_id: int, optional
     :return: the new current amount of global options of the connector
     """
     addElement = True
@@ -702,7 +702,7 @@ def add_race_spell(race_id, race_options_id, subrace_id=-1):
     :param race_options_id: the current amount of global race options
     :type race_options_id: int
     :param subrace_id: the id of the subrace it connects to, if appropriate
-    :type subrace_id: int
+    :type subrace_id: int, optional
     :return: the new current amount of global race options
     """
     addElement = True
@@ -733,7 +733,7 @@ def add_class_magic(class_id, lvl, subclass_id=-1):
     :param lvl: the level at which this magic is accessible to the class
     :type lvl: int
     :param subclass_id: the unique identifier of the subclass required for the class to gain access to this, or -1
-    :type subclass_id: int
+    :type subclass_id: int, optional
     """
     Db.cursor.execute("SELECT COUNT(*) FROM Magic")
     magicId = Db.cursor.fetchone()[0] + 1
@@ -809,7 +809,7 @@ def add_class_traits(class_id, class_options_id, subclass_id=-1):
     :param class_options_id: the current total amount of ClassOptions rows
     :type class_options_id: int
     :param subclass_id: the unique identifier of the subclass to add to, if appropriate
-    :type subclass_id: int
+    :type subclass_id: int, optional
     :return: the new total amount of ClassOptions rows
     """
     class_options_id += 1

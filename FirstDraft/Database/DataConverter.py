@@ -1,5 +1,6 @@
 from Database import DataExtractor, CoreDatabase as Db
 from CharacterElements import Character, Class, Equipment, Race, Spell
+import itertools
 
 
 
@@ -51,9 +52,7 @@ def make_choice(num_of_choices, choices):
             if nextAddition < len(choiceDict.keys()):
                 output.append(list(choiceDict.values())[nextAddition])
                 choiceDict.pop(list(choiceDict.keys())[nextAddition])
-    return list(*output)
-
-
+    return list(itertools.chain(*output))
 
 
 def create_background(background_name):
@@ -73,7 +72,7 @@ def create_background(background_name):
     return Character.Background(background_name, finalProfs, finalLanguages)
 
 
-def create_class(class_name, class_lvl, subclass=None):      # INCOMPLETE
+def create_class(class_name, class_lvl, subclass=None):
     """
     Creates and returns a class object, given the name of the class to use.
     :param class_name: the name of the class selected
@@ -81,7 +80,7 @@ def create_class(class_name, class_lvl, subclass=None):      # INCOMPLETE
     :param class_lvl: the level to build the class at
     :type class_lvl: int
     :param subclass: the subclass to add to this object
-    :type subclass: object
+    :type subclass: object, optional
     :return: a python object representing the class
     """
     classId = Db.get_id(class_name, "Class")
@@ -90,15 +89,58 @@ def create_class(class_name, class_lvl, subclass=None):      # INCOMPLETE
     hitDice, primaryAbility, secondaryAbility, isMagical = Db.cursor.fetchone()
 
     traits, proficiencies, languages = collect_class_option_data(class_name, class_lvl)
-    equipment = []   # EXTRACT EQUIPMENT
+    equipment = create_equipment(class_name)
 
     if isMagical:
-        magic = []   # EXTRACT MAGIC
+        magic = create_class_magic(class_name, class_lvl)
         return Class.Class(class_name, traits, proficiencies, equipment, primaryAbility, secondaryAbility,
                            hitDice, languages, class_lvl, magic, subclass)
     else:
         return Class.Class(class_name, traits, proficiencies, equipment, primaryAbility, secondaryAbility,
                            hitDice, languages, class_lvl, subclass=subclass)
+
+
+def create_class_magic(class_name, class_lvl, subclass_name=""):
+    """
+    Creates the magic related to a class at a specified level.
+    :param class_name: the class to create magic for
+    :type class_name: str
+    :param class_lvl: the level the class is at when gaining the magic object
+    :type class_lvl: int
+    :param subclass_name: the subclass to create magic for, if appropriate
+    :type subclass_name: str, optional
+    :return: an object representing all the magic in a class
+    """
+    # retrieves and sets up variables
+    [cantripsKnown, amntKnown, spellsPrepared, knownCalc], spells, spellslots, subclassSpells \
+        = DataExtractor.create_class_magic(class_name, class_lvl, subclass_name)
+    spellsPrepared = spellsPrepared == 1
+    spellObjects, cantripObjects, selectedSpells = [], [], []
+    if amntKnown is None:
+        amntKnown = -1
+
+    # creates spells
+    for spell in spells:
+        nextSpell = Spell.get_spell(spell, class_lvl)
+        if nextSpell.level == 0:
+            cantripObjects.append(nextSpell)
+        else:
+            spellObjects.append(nextSpell)
+
+    # adds subclass spells as always prepared spells
+    subclassSpellObjects = []
+    for spell in subclassSpells:
+        nextSpell = Spell.get_spell(spell, class_lvl)
+        subclassSpellObjects.append(nextSpell)
+
+    # chooses spells
+    selectedSpells = make_choice(cantripsKnown, cantripObjects) + subclassSpellObjects
+    if spellsPrepared is False:
+        selectedSpells += make_choice(amntKnown, spellObjects)
+        params = [spellslots, False, amntKnown, selectedSpells]
+    else:
+        params = [spellslots, True, amntKnown, selectedSpells, knownCalc, spellObjects]
+    return Class.ClassMagic(*params)
 
 
 def collect_class_option_data(class_name, class_lvl):
@@ -142,6 +184,12 @@ def create_all_equipment():
 
 
 def create_equipment(class_name):
+    """
+    Creates and selects all equipment options for one class.
+    :param class_name: the name of the class to get the equipment for
+    :type class_name: str
+    :return: a list of equipment objects
+    """
     optionsData = DataExtractor.equipment_connections(Db.get_id(class_name, "Class"))
     equipment = []
     for option in optionsData:
@@ -154,6 +202,7 @@ def create_equipment_option(option):
     Creates a single equipment option set.
     :param option: a list of metadata and objects in the option,
     in the layout [[isChoice boolean, [optional subsection]], [equipment objects]]
+    :type option: list
     :return: whether the option was a choice, and a list of the equipment objects selected
     """
     metadata, items = option
@@ -176,7 +225,10 @@ def create_equipment_option(option):
 
 
 def begin():
-    output = create_equipment("Bard")
-    for item in output:
-        print(item.name)
+    """
+    Begins the use of the data conversion.
+    """
+    result = create_class_magic("Cleric", 1, "Light Domain")
+    print("\n\n")
+    print(result)
 
