@@ -22,7 +22,7 @@ class Race:
         :type size: str, optional
         :param darkvision: Whether this race grants darkvision or not.
         :type darkvision: bool, optional
-        :param spells: Any spells that can be cast from a racial trait.
+        :param spells: Any spells that can be cast from a racial trait, as pairs (spell, spellLvl).
         :type spells: list, optional
         :param spell_modifier: The ability score modifier used to cast the racial spells
         :type spell_modifier: str, optional
@@ -48,6 +48,7 @@ class Race:
             self.spells = spells
 
         if subrace is not None:
+            self.name = subrace.name
             self.extract_subrace(subrace)
 
     def extract_subrace(self, subrace):
@@ -62,7 +63,7 @@ class Race:
             if key in ["languages", "proficiencies", "traits",  "spells"]:
                 setattr(self, key, attributeVal + subraceDict[key])
             # if it's a dictionary, merge the dictionaries
-            elif key == "ability scores":
+            elif key == "abilityScores":
                 self.abilityScores = {**self.abilityScores, **subraceDict[key]}
             # if it's single value, update the attribute value
             else:
@@ -77,7 +78,7 @@ class Race:
             "name": self.name,
             "languages": self.languages,
             "proficiencies": self.proficiencies,
-            "ability scores": self.abilityScores,
+            "abilityScores": self.abilityScores,
             "traits": self.traits,
             "speed": self.speed,
             "size": self.size,
@@ -88,8 +89,48 @@ class Race:
         }
 
         # remove null data
-        for key in dataDict.keys():
+        tempDataDict = dataDict.copy()
+        for key in tempDataDict.keys():
             if dataDict[key] is None or dataDict[key] is False:
                 del dataDict[key]
 
         return dataDict
+
+    def __str__(self):
+        """
+        Converts the object to a string of it's content.
+        :return: the objects relevant content, in a printable layout
+        """
+        output = f"This {self.name} has a speed of {self.speed}ft and is of {self.size} size.\n" \
+                 f"They can speak {', '.join(self.languages)}.\n"
+
+        if self.darkvision is True:
+            output += "They are capable of seeing in darkness."
+        if self.resistance is not None and self.resistance != "":
+            output += f"They have resistance to {self.resistance} damage."
+        output += "\n"
+
+        for ability, addition in self.abilityScores.items():
+            output += f"They gain +{addition} to their {ability} ability score. "
+        output += "\n"
+
+        if len(self.proficiencies) > 0:
+            output += "\nThey have proficiency with "
+            for proficiency in self.proficiencies:
+                output += proficiency + ", "
+            output = output[:-2] + ".\n"
+
+        if len(self.traits) > 0:
+            output += "\nThey have the traits "
+            for trait in self.traits:
+                output += trait[0] + ", "
+            output = output[:-2] + ".\n"
+
+        if len(self.spells) > 0:
+            output += f"Using {self.spellMod} as their spellcasting ability, they can cast "
+            for spell in self.spells:
+                output += f"{spell[0].name} as if using a spellslot of level {spell[1]}, "
+            output = output[:-2] + ".\n"
+
+        return output
+

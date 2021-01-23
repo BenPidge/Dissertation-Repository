@@ -79,6 +79,68 @@ def background_connections(background_name):
     return [toolAmnt, tools], [skillAmnt, skills], [languageAmnt, languages]
 
 
+def race_options_connections(race_options_id, subrace_id=-1):
+    """
+    Returns the names of the options that RaceOptions offers, and RaceOptions data.
+    :param race_options_id: the id of the race option to extract
+    :type race_options_id: int
+    :param subrace_id: the id of the subrace of the option to extract
+    :type subrace_id: int, optional
+    :return: [any spells], the amount to choose, [choices]
+    """
+    # retrieve all data related to the RaceOptions
+    if subrace_id > -1:
+        subclassCall = "=" + str(subrace_id)
+    else:
+        subclassCall = " IS NULL"
+    Db.cursor.execute("SELECT amntToChoose FROM RaceOptions WHERE raceOptionsId="
+                      + str(race_options_id) + " AND subraceId" + subclassCall)
+    try:
+        amntToChoose = Db.cursor.fetchone()[0]
+    except TypeError:
+        amntToChoose = -1
+
+    # gets data from other methods
+    languages = list(set(get_names_from_connector("RaceOptions", "Language", race_options_id)))
+    proficiencies = list(set(get_names_from_connector("RaceOptions", "Proficiency", race_options_id)))
+
+    # gets all spells info
+    spells = []
+    Db.cursor.execute("SELECT * FROM RaceSpell WHERE raceOptionsId=" + str(race_options_id))
+    spellsInfo = Db.cursor.fetchall()
+    for spellInfo in spellsInfo:
+        Db.cursor.execute("SELECT spellName FROM Spell WHERE spellId=" + str(spellInfo[1]))
+        name = Db.cursor.fetchone()[0]
+        # sets missing spell info to its default value
+        spellInfo = list(spellInfo)
+        if spellInfo[2] is None:
+            Db.cursor.execute("SELECT spellLevel FROM Spell WHERE spellName='" + name + "'")
+            spellInfo[2] = Db.cursor.fetchone()[0]
+        if spellInfo[3] is None:
+            spellInfo[3] = 1
+        info = [name] + list(spellInfo[2:])
+        spells.append(info)
+
+    # converts this data into an array
+    output = []
+    classOption = ["languages", "proficiencies", "spells"]
+    metadata = [amntToChoose]
+    counter = 0
+    for data in [languages, proficiencies, spells]:
+        if len(data) > 0:
+            output += data
+            metadata += [classOption[counter]]
+        counter += 1
+
+    if metadata[0] == -1 or metadata[0] is None:
+        metadata[0] = len(output)
+    # if the RaceOptions holds no information connections, it was saved during an insert that failed,
+    # so thus deletes the row
+    if len(output) == 0:
+        Db.cursor.execute("DELETE FROM RaceOptions WHERE raceOptionsId=" + str(race_options_id))
+    return metadata, output
+
+
 def create_class_magic(class_name, class_lvl, subclass_name=""):
     """
     Retrieves the magic associated with a class at a given level.
@@ -140,6 +202,13 @@ def class_options_connections(class_options_id, subclass_id=-1):
     proficiencies = get_names_from_connector("ClassOptions", "Proficiency", class_options_id)
     traits = get_names_from_connector("ClassOptions", "Trait", class_options_id)
 
+    newTraits = []
+    for trait in traits:
+        Db.cursor.execute("SELECT traitDescription FROM Trait WHERE traitName='" + trait + "'")
+        desc = Db.cursor.fetchone()[0]
+        newTraits.append((trait, desc))
+    traits = newTraits
+
     # converts all the data into two arrays
     output = []
     classOption = ["languages", "proficiencies", "traits"]
@@ -151,6 +220,8 @@ def class_options_connections(class_options_id, subclass_id=-1):
         counter += 1
     if metadata[0] is None:
         metadata[0] = 1
+    if metadata[1] is None:
+        metadata[1] = len(output)
 
     # if the ClassOptions holds no information connections, it was saved during an insert that failed,
     # so thus deletes the row
@@ -266,7 +337,7 @@ def begin():
     Begins the use of the data extraction.
     """
     for x in ["Barbarian", "Bard", "Cleric", "Druid", "Fighter", "Monk", "Paladin", "Ranger", "Rogue", "Sorcerer", "Warlock", "Wizard"]:
-        metadata, spells, spellslots = create_class_magic(x, 1)
+        metadata, spells, spellslots, subSpells = create_class_magic(x, 1)
         print(x)
         print(metadata)
         print("Spells: " + ", ".join(spells))
@@ -274,7 +345,7 @@ def begin():
             print(f"They have {pair[1]} {pair[0]}st level spellslots")
         print("\n")
 
-    metadata, spells, spellslots = create_class_magic("Cleric", 1, "Light Domain")
+    metadata, spells, spellslots, subSpells = create_class_magic("Cleric", 1, "Light Domain")
     print("Light Domain")
     print(metadata)
     print("Spells: " + ", ".join(spells))

@@ -1,7 +1,226 @@
+import CharacterElements.Magic
 from Database import DataExtractor, CoreDatabase as Db
 from CharacterElements import Character, Class, Equipment, Race, Spell
 import itertools
 
+
+
+def create_character(chr_lvl):
+    """
+    Creates a character object at the given level.
+    :param chr_lvl: the level to build the character at
+    :type chr_lvl: int
+    :return: a character object
+    """
+    Db.cursor.execute(f"SELECT backgroundName FROM Background")
+    backgrounds = list(itertools.chain(*Db.cursor.fetchall()))
+    background = create_background(make_choice(1, backgrounds)[0])
+
+    Db.cursor.execute(f"SELECT raceName FROM Race")
+    races = list(itertools.chain(*Db.cursor.fetchall()))
+    race = make_choice(1, races)[0]
+    Db.cursor.execute(f"SELECT subraceName FROM Subrace WHERE raceId={Db.get_id(race, 'Race')}")
+    subraces = list(itertools.chain(*Db.cursor.fetchall()))
+    if len(subraces) > 0:
+        subraceId = Db.get_id(make_choice(1, subraces)[0], "Subrace")
+        race = create_race(race, chr_lvl, subraceId)
+    else:
+        race = create_race(race, chr_lvl)
+
+    Db.cursor.execute(f"SELECT className FROM Class")
+    classes = list(itertools.chain(*Db.cursor.fetchall()))
+    chrClass = make_choice(1, classes)[0]
+    Db.cursor.execute(f"SELECT subclassName FROM Subclass WHERE classId={Db.get_id(chrClass, 'Class')}")
+    subclasses = list(itertools.chain(*Db.cursor.fetchall()))
+    if len(subclasses) > 0:
+        chrClass = create_class(chrClass, chr_lvl, make_choice(1, subclasses)[0])
+    else:
+        chrClass = create_class(chrClass, chr_lvl)
+
+    abilityScores = create_ability_scores((chrClass.mainAbility, chrClass.secondAbility))
+    return Character.Character(race, chrClass, background, abilityScores)
+
+
+def create_background(background_name):
+    """
+    Creates and returns a background object, given the name of the background to use.
+    :param background_name: the name of the background selected
+    :type background_name: str
+    :return: a python object representing the background
+    """
+    tools, skills, languages = DataExtractor.background_connections(background_name)
+    finalProfs, finalLanguages = [], []
+
+    finalProfs += make_choice(tools[0], tools[1])
+    finalProfs += make_choice(skills[0], skills[1])
+    finalLanguages = make_choice(languages[0], languages[1])
+
+    return Character.Background(background_name, finalProfs, finalLanguages)
+
+
+def create_class(class_name, class_lvl, subclass_name=""):
+    """
+    Creates and returns a class object, given the name of the class to use.
+    :param class_name: the name of the class selected
+    :type class_name: str
+    :param class_lvl: the level to build the class at
+    :type class_lvl: int
+    :param subclass_name: the subclass to add to this object
+    :type subclass_name: object, optional
+    :return: a python object representing the class
+    """
+    classId = Db.get_id(class_name, "Class")
+    Db.cursor.execute("SELECT hitDiceSides, primaryAbility, secondaryAbility, isMagical, savingThrows FROM Class "
+                      "WHERE classId=" + str(classId))
+    hitDice, primaryAbility, secondaryAbility, isMagical, savingThrows = Db.cursor.fetchone()
+
+    if subclass_name != "":
+        subclass = create_subclass(subclass_name, class_lvl)
+    else:
+        subclass = None
+
+    traits, proficiencies, languages = collect_class_option_data(class_name, class_lvl)
+    equipment = create_equipment(class_name)
+
+    if isMagical:
+        magic = create_class_magic(class_name, class_lvl)
+        return Class.Class(class_name, traits, proficiencies, equipment, primaryAbility, secondaryAbility,
+                           savingThrows, hitDice, languages, class_lvl, magic, subclass)
+    else:
+        return Class.Class(class_name, traits, proficiencies, equipment, primaryAbility, secondaryAbility,
+                           savingThrows, hitDice, languages, class_lvl, subclass=subclass)
+
+
+def create_subclass(subclass_name, class_lvl):
+    """
+    Extracts the subclass options data from the database.
+    :param subclass_name: the name of the subclass being extracted
+    :type subclass_name: str
+    :param class_lvl: the current level in this subclass
+    :type class_lvl: int
+    :return:
+    """
+    Db.cursor.execute("SELECT subclassId, classId, secondaryAbility FROM Subclass WHERE subclassName='"
+                      + subclass_name + "'")
+    subclassId, classId, secondAbility = Db.cursor.fetchone()
+    Db.cursor.execute("SELECT className, secondaryAbility FROM Class WHERE classId=" + str(classId))
+    className, classSecondAbility = Db.cursor.fetchone()
+
+    traits, proficiencies, languages = collect_class_option_data(className, class_lvl, subclassId)
+    magic = create_class_magic(className, class_lvl, subclass_name)
+    if secondAbility is None:
+        secondAbility = classSecondAbility
+
+    return Class.Subclass(subclass_name, className, secondAbility, traits, magic, languages, proficiencies)
+
+
+def create_race(race_name, chr_lvl, subrace_id=-1, is_subrace=False):
+    """
+    Creates and returns a race object, given the name and level of the race to use.
+    :param race_name: the name of the race to create
+    :type race_name: str
+    :param chr_lvl: the level of the character being created
+    :type chr_lvl: int
+    :param subrace_id: the id of the subrace being built
+    :type subrace_id: int, optional
+    :param is_subrace: whether the current pass is creating the subrace
+    :type is_subrace: bool, optional
+    :return: a race object of the inputted race
+    """
+    # recursively builds a subrace from the data
+    if subrace_id > -1 and is_subrace is False:
+        subrace = create_race(race_name, chr_lvl, subrace_id, True)
+        subrace_id = -1
+    else:
+        subrace = None
+
+    # get basic variable data
+    if subrace_id == -1:
+        subraceStr = " IS NULL"
+    else:
+        subraceStr = "=" + str(subrace_id)
+
+    raceId = Db.get_id(race_name, "Race")
+    # get basic racial data
+    Db.cursor.execute("SELECT size FROM Race WHERE raceId=" + str(raceId))
+    size = Db.cursor.fetchone()[0]
+    if subrace_id == -1:
+        Db.cursor.execute("SELECT speed, darkvision, resistance FROM Race WHERE raceId=" + str(raceId))
+    else:
+        Db.cursor.execute("SELECT speed, darkvision, resistance FROM Subrace WHERE raceId="
+                          + str(raceId) + " AND subraceId" + subraceStr)
+    speed, darkvision, resistance = Db.cursor.fetchone()
+
+
+    # gets the trait data
+    traits = []
+    traitNames = DataExtractor.get_names_from_connector("Race", "Trait", raceId)
+    for trait in traitNames:
+        Db.cursor.execute("SELECT subraceId FROM RaceTrait WHERE traitId=" + str(Db.get_id(trait, "Trait")))
+        subId = Db.cursor.fetchone()[0]
+        if (subId is None and subrace_id == -1) or (subId == subrace_id):
+            Db.cursor.execute("SELECT traitDescription FROM Trait WHERE traitName='" + trait + "'")
+            traits.append((trait, Db.cursor.fetchone()[0]))
+    traits = choose_trait_option(traits)
+
+    # extracts data from options
+    spells, modUsed, proficiencies, languages = collect_race_option_data(race_name, chr_lvl, subrace_id)
+
+    # gets the ability score data
+    Db.cursor.execute("SELECT abilityScore, scoreIncrease FROM RaceAbilityScore WHERE raceId="
+                      + str(raceId) + " AND subraceId" + subraceStr)
+    abilityScores = dict()
+    for scoreName, scoreIncrease in Db.cursor.fetchall():
+        abilityScores.update({scoreName: scoreIncrease})
+
+    # converts data into the required formats
+    darkvision = darkvision == 1
+    if len(spells) == 0:
+        spells = None
+        modUsed = None
+
+    return Race.Race(race_name, languages, proficiencies, abilityScores, traits, speed, size, darkvision,
+                     spells, modUsed, resistance, subrace)
+
+
+def create_equipment(class_name):
+    """
+    Creates and selects all equipment options for one class.
+    :param class_name: the name of the class to get the equipment for
+    :type class_name: str
+    :return: a list of equipment objects
+    """
+    optionsData = DataExtractor.equipment_connections(Db.get_id(class_name, "Class"))
+    equipment = []
+    for option in optionsData:
+        equipment += create_equipment_option(option)[1]
+    return equipment
+
+
+def create_ability_scores(priorities):
+    """
+    Creates ability scores using point buy, and the inputted priorities.
+    :param priorities: a (primary, secondary) pair of the two main priorities
+    :type priorities: tuple
+    :return: a dictionary holding the 6 ability scores, with the layout {ability: score}
+    """
+    availablePoints = 27
+    abilityScores = dict({"STR": 8, "DEX": 8, "CON": 8, "INT": 8, "WIS": 8, "CHA": 8})
+    # REPLACE ALL BELOW WITH CALCULATIONS HERE
+    abilityScores[priorities[0]] = 15
+    abilityScores[priorities[1]] = 15
+    if abilityScores["CON"] < 15:
+        abilityScores["CON"] = 15
+    else:
+        incomplete = True
+        counter = 0
+        keyList = list(abilityScores.keys())
+        while incomplete is True:
+            if abilityScores[keyList[counter]] < 15:
+                abilityScores[keyList[counter]] = 15
+                incomplete = False
+
+    return abilityScores
 
 
 def make_choice(num_of_choices, choices):
@@ -52,52 +271,74 @@ def make_choice(num_of_choices, choices):
             if nextAddition < len(choiceDict.keys()):
                 output.append(list(choiceDict.values())[nextAddition])
                 choiceDict.pop(list(choiceDict.keys())[nextAddition])
-    return list(itertools.chain(*output))
+
+    allStr = True
+    for x in range(0, len(output)):
+        if type(output[x]) is not str:
+            allStr = False
+
+    if not(len(output) == 1 and type(output[0]) is not list) and allStr is False:
+        output = list(itertools.chain(*output))
+    return output
 
 
-def create_background(background_name):
+def collect_race_option_data(race_name, chr_lvl, subrace_id=-1):
     """
-    Creates and returns a background object, given the name of the background to use.
-    :param background_name: the name of the background selected
-    :type background_name: str
-    :return: a python object representing the background
+    Extracts the race options data from the race database.
+    :param race_name: the name of the race selected
+    :type race_name: str
+    :param chr_lvl: the level of the character being built
+    :type chr_lvl: int
+    :param subrace_id: the id of the subrace, if appropriate
+    :type subrace_id: int, optional
+    :return: three arrays holding the traits, proficiencies and languages
     """
-    tools, skills, languages = DataExtractor.background_connections(background_name)
-    finalProfs, finalLanguages = [], []
-
-    finalProfs += make_choice(tools[0], tools[1])
-    finalProfs += make_choice(skills[0], skills[1])
-    finalLanguages = make_choice(languages[0], languages[1])
-
-    return Character.Background(background_name, finalProfs, finalLanguages)
-
-
-def create_class(class_name, class_lvl, subclass=None):
-    """
-    Creates and returns a class object, given the name of the class to use.
-    :param class_name: the name of the class selected
-    :type class_name: str
-    :param class_lvl: the level to build the class at
-    :type class_lvl: int
-    :param subclass: the subclass to add to this object
-    :type subclass: object, optional
-    :return: a python object representing the class
-    """
-    classId = Db.get_id(class_name, "Class")
-    Db.cursor.execute("SELECT hitDiceSides, primaryAbility, secondaryAbility, isMagical FROM Class WHERE classId="
-                      + str(classId))
-    hitDice, primaryAbility, secondaryAbility, isMagical = Db.cursor.fetchone()
-
-    traits, proficiencies, languages = collect_class_option_data(class_name, class_lvl)
-    equipment = create_equipment(class_name)
-
-    if isMagical:
-        magic = create_class_magic(class_name, class_lvl)
-        return Class.Class(class_name, traits, proficiencies, equipment, primaryAbility, secondaryAbility,
-                           hitDice, languages, class_lvl, magic, subclass)
+    if subrace_id == -1:
+        subraceStr = " IS NULL"
     else:
-        return Class.Class(class_name, traits, proficiencies, equipment, primaryAbility, secondaryAbility,
-                           hitDice, languages, class_lvl, subclass=subclass)
+        subraceStr = "=" + str(subrace_id)
+
+    spells, proficiencies, languages = [], [], []
+    modUsed = ""
+    Db.cursor.execute("SELECT raceOptionsId FROM RaceOptions WHERE raceId=" + str(Db.get_id(race_name, "Race"))
+                      + " AND subraceId" + subraceStr)
+    ids = Db.cursor.fetchall()
+    Db.cursor.execute("SELECT raceOptionsId FROM RaceOptions WHERE raceId=" + str(Db.get_id(race_name, "Race")))
+    for nextId in ids:
+        metadata, options = DataExtractor.race_options_connections(nextId[0], subrace_id)
+        if len(options) > 0:
+            if metadata[1] == "proficiencies":
+                proficiencies += make_choice(metadata[0], options)
+            elif metadata[1] == "spells":
+                spellNames = []
+                for spell in options:
+                    spellNames.append(spell[0])
+                print(nextId)
+                spells = make_choice(metadata[0], spellNames)
+                spells = build_race_spells(options, spells, chr_lvl)
+                modUsed = options[0][3]
+            else:
+                languages += make_choice(metadata[0], options)
+    return spells, modUsed, proficiencies, languages
+
+
+def build_race_spells(spells_data, spell_names, chr_lvl):
+    """
+    Builds the spells selected for the race alongside their additional data.
+    :param spells_data: a 2D array, with arrays holding all data for each available spell
+    :type spells_data: list
+    :param spell_names: an array of all the names of spells selected
+    :type spell_names: list
+    :param chr_lvl: the current level of the character
+    :type chr_lvl: int
+    :return: an array of (spell object, spell cast level)
+    """
+    spellObjects = []
+    for x in range(0, len(spell_names)):
+        print(spells_data[x])
+        if spells_data[x][2] <= chr_lvl:
+            spellObjects.append((Spell.get_spell(spell_names[x], chr_lvl), spells_data[x][1]))
+    return spellObjects
 
 
 def create_class_magic(class_name, class_lvl, subclass_name=""):
@@ -129,9 +370,16 @@ def create_class_magic(class_name, class_lvl, subclass_name=""):
 
     # adds subclass spells as always prepared spells
     subclassSpellObjects = []
-    for spell in subclassSpells:
-        nextSpell = Spell.get_spell(spell, class_lvl)
-        subclassSpellObjects.append(nextSpell)
+    if subclass_name != "":
+        cantripIncl = 0
+        for spell in subclassSpells:
+            nextSpell = Spell.get_spell(spell, class_lvl)
+            subclassSpellObjects.append(nextSpell)
+            if nextSpell.level == 0:
+                cantripIncl += 1
+        Db.cursor.execute("SELECT cantripsKnown FROM Magic WHERE classId="
+                          + str(Db.get_id(class_name, "Class")) + " AND subclassId IS NULL")
+        cantripsKnown -= (Db.cursor.fetchone()[0] + cantripIncl)
 
     # chooses spells
     selectedSpells = make_choice(cantripsKnown, cantripObjects) + subclassSpellObjects
@@ -140,32 +388,62 @@ def create_class_magic(class_name, class_lvl, subclass_name=""):
         params = [spellslots, False, amntKnown, selectedSpells]
     else:
         params = [spellslots, True, amntKnown, selectedSpells, knownCalc, spellObjects]
-    return Class.ClassMagic(*params)
+    return CharacterElements.Magic.Magic(*params)
 
 
-def collect_class_option_data(class_name, class_lvl):
+def collect_class_option_data(class_name, class_lvl, subclass_id=-1):
     """
     Extracts the class options data from the class database.
     :param class_name: the name of the class selected
     :type class_name: str
     :param class_lvl: the level to build the class at
     :type class_lvl: int
-    :return: a python object representing the class
+    :param subclass_id: the id of the subclass, if appropriate
+    :type subclass_id: int, optional
+    :return: three arrays holding the traits, proficiencies and languages
     """
+    if subclass_id == -1:
+        subclassStr = " IS NULL"
+    else:
+        subclassStr = "=" + str(subclass_id)
+
     traits, proficiencies, languages = [], [], []
     Db.cursor.execute("SELECT classOptionsId FROM ClassOptions WHERE classId=" + str(
-        Db.get_id(class_name, "Class")) + " AND subclassId IS NULL")
+        Db.get_id(class_name, "Class")) + " AND subclassId" + subclassStr)
     ids = Db.cursor.fetchall()
     for nextId in ids:
         metadata, options = DataExtractor.class_options_connections(nextId[0])
         if metadata[0] <= class_lvl:
             if metadata[2] == "traits":
                 traits = make_choice(metadata[1], options)
+                traits = choose_trait_option(traits)
             elif metadata[2] == "proficiencies":
                 proficiencies = make_choice(metadata[1], options)
             else:
                 languages = make_choice(metadata[1], options)
     return traits, proficiencies, languages
+
+
+def choose_trait_option(traits):
+    """
+    Goes through traits in order to make any trait choices required.
+    :param traits: the list of traits, each being the format (name, desc)
+    :type traits: list
+    :return: the updated list of traits
+    """
+    choices = []
+    for x in range(0, len(traits)):
+        Db.cursor.execute(f"SELECT optionDesc FROM TraitOption "
+                          f"WHERE traitId={Db.get_id(traits[x][0], 'Trait')}")
+        options = Db.cursor.fetchall()
+        if len(options) > 0:
+            for option in options:
+                choices.append(option)
+            selectedOption = make_choice(1, choices)
+            choices.clear()
+            traits[x] = (traits[x][0], str(traits[x][1]) + " " + str(selectedOption[0][0]))
+            print(traits[x])
+    return traits
 
 
 def create_all_equipment():
@@ -181,20 +459,6 @@ def create_all_equipment():
             Equipment.Equipment(*equip[:-1], item_range=equip[-1])
         else:
             Equipment.Equipment(*equip)
-
-
-def create_equipment(class_name):
-    """
-    Creates and selects all equipment options for one class.
-    :param class_name: the name of the class to get the equipment for
-    :type class_name: str
-    :return: a list of equipment objects
-    """
-    optionsData = DataExtractor.equipment_connections(Db.get_id(class_name, "Class"))
-    equipment = []
-    for option in optionsData:
-        equipment += create_equipment_option(option)[1]
-    return equipment
 
 
 def create_equipment_option(option):
@@ -228,7 +492,8 @@ def begin():
     """
     Begins the use of the data conversion.
     """
-    result = create_class_magic("Cleric", 1, "Light Domain")
-    print("\n\n")
+    result = create_character(1)
     print(result)
+
+    # need to implement trait choices
 
