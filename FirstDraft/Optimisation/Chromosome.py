@@ -19,14 +19,13 @@ class Chromosome:
         :type tags: list
         """
         self.character = character
-        self.tags = tags
-        self.magicWeight = magic_weight
-        self.healthWeight = health_weight
+        self.health = [health_weight, (character.chrClass.hitDice - 6)/2]
+        self.magic = [magic_weight, self.spellslots_value()]
 
-        # tagsFitness is a 2D array with nested array layouts of [tag, tags' weighting, tags' individual fitness]
-        self.tagsFitness = []
-        for (tag, weight) in self.tags:
-            self.tagsFitness.append([tag, weight, 0])
+        # tags is a 2D array with nested array layouts of [tag, tags' weighting, tags' unweighted individual fitness]
+        self.tags = []
+        for (tag, weight) in tags:
+            self.tags.append([tag, weight, 0])
 
         self.extract_tags()
 
@@ -39,15 +38,15 @@ class Chromosome:
         :type addition: int
         """
         # flatten tagsFitness to get the tags' array index from the name
-        index = int(list(itertools.chain(*self.tagsFitness)).index(tag) / 3)
-        self.tagsFitness[index][2] += addition * self.tagsFitness[index][1]
+        index = int(list(itertools.chain(*self.tags)).index(tag) / 3)
+        self.tags[index][2] += addition
 
     def extract_tags(self):
         """
         Extracts the needed information from each tag.
         """
         self.ability_scores_tag()
-        for (tag, weight) in self.tags:
+        for (tag, weight, fitness) in self.tags:
             self.update_indiv_tag_fitness(tag, self.get_tag_fitness(tag))
 
     def get_tag_fitness(self, tag):
@@ -59,11 +58,11 @@ class Chromosome:
         """
         fitness = 0
         tagId = Db.get_id(tag, "Tag")
-        fitness += self.get_proficiencies(tagId)
+        fitness += self.proficiencies_total(tagId)
 
         return fitness
 
-    def get_proficiencies(self, tag_id):
+    def proficiencies_total(self, tag_id):
         """
         Counts how many proficiencies the character has that are appropriate to the given tag.
         :param tag_id: the id of the given tag to use for comparisons
@@ -80,12 +79,23 @@ class Chromosome:
 
         return values
 
+    def spellslots_value(self):
+        """
+        Calculates the total magic value provided from the spellslots.
+        :return: an integer value representing the spellslots' worth
+        """
+        value = 0
+        for lvl, amnt in self.character.magic.spellSlot.items():
+            value += lvl * amnt
+        return value
+
     def ability_scores_tag(self):
         """
         Converts the current ability scores into one weighted integer, if they're related to tag.
         """
+        # while it'll never be part of the intersect, health is kept in for tags-to-ability-score index consistency
         potentialTags = ["strong", "dexterous", "health", "wise", "knowledgeable", "charismatic"]
         # for every archetype-owned tag within potentialTags, ignoring casing
-        for tag in list(set([x.lower() for x in potentialTags]) & set([x.lower() for x in self.tags])):
+        for tag in list(set([x[0].lower() for x in potentialTags]) & set([x[0].lower() for x in self.tags])):
             value = self.character.abilityScores.items()[potentialTags.index(tag)]
             self.update_indiv_tag_fitness(tag, value)
