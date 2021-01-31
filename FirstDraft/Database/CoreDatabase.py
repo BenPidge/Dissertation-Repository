@@ -20,6 +20,22 @@ def int_input(prompt):
     return output
 
 
+def float_input(prompt):
+    """
+    Repeatedly asks for an input until a float is entered.
+    :param prompt: the question an input is required for
+    :type prompt: str
+    :return: the float input
+    """
+    output = None
+    while output is None:
+        try:
+            output = float(input(prompt))
+        except ValueError:
+            print("The input entered was not a float")
+    return output
+
+
 def complete_setup():
     """
     Commits and closes the database connection, ensuring all edits are saved.

@@ -542,154 +542,26 @@ border-style: outset;</string>
     </property>
     <layout class="QHBoxLayout" name="skills">
      <item>
-      <layout class="QVBoxLayout" name="firstColumn">
-       <item>
-        <widget class="QCheckBox" name="checkBox_28">
-         <property name="text">
-          <string>Acrobatics</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QCheckBox" name="checkBox_20">
-         <property name="text">
-          <string>Insight</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QCheckBox" name="checkBox_21">
-         <property name="text">
-          <string>Performance</string>
-         </property>
-        </widget>
-       </item>
+      <layout class="QVBoxLayout" name="skillColumn1">
+       <property name="sizeConstraint">
+        <enum>QLayout::SetDefaultConstraint</enum>
+       </property>
       </layout>
      </item>
      <item>
-      <layout class="QVBoxLayout" name="secondColumn">
-       <item>
-        <widget class="QCheckBox" name="checkBox_25">
-         <property name="text">
-          <string>Animal Handling</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QCheckBox" name="checkBox_26">
-         <property name="text">
-          <string>Intimidation</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QCheckBox" name="checkBox_27">
-         <property name="text">
-          <string>Persuasion</string>
-         </property>
-        </widget>
-       </item>
-      </layout>
+      <layout class="QVBoxLayout" name="skillColumn2"/>
      </item>
      <item>
-      <layout class="QVBoxLayout" name="thirdColumn">
-       <item>
-        <widget class="QCheckBox" name="checkBox_19">
-         <property name="text">
-          <string>Arcana</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QCheckBox" name="checkBox_29">
-         <property name="text">
-          <string>Investigation</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QCheckBox" name="checkBox_30">
-         <property name="text">
-          <string>Religion</string>
-         </property>
-        </widget>
-       </item>
-      </layout>
+      <layout class="QVBoxLayout" name="skillColumn3"/>
      </item>
      <item>
-      <layout class="QVBoxLayout" name="fourthColumn">
-       <item>
-        <widget class="QCheckBox" name="checkBox_31">
-         <property name="text">
-          <string>Athletics</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QCheckBox" name="checkBox_32">
-         <property name="text">
-          <string>Medicine</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QCheckBox" name="checkBox_33">
-         <property name="text">
-          <string>Sleight of Hand</string>
-         </property>
-        </widget>
-       </item>
-      </layout>
+      <layout class="QVBoxLayout" name="skillColumn4"/>
      </item>
      <item>
-      <layout class="QVBoxLayout" name="fifthColumn">
-       <item>
-        <widget class="QCheckBox" name="checkBox_34">
-         <property name="text">
-          <string>Deception</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QCheckBox" name="checkBox_35">
-         <property name="text">
-          <string>Nature</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QCheckBox" name="checkBox_36">
-         <property name="text">
-          <string>Stealth</string>
-         </property>
-        </widget>
-       </item>
-      </layout>
+      <layout class="QVBoxLayout" name="skillColumn5"/>
      </item>
      <item>
-      <layout class="QVBoxLayout" name="sixthColumn">
-       <item>
-        <widget class="QCheckBox" name="checkBox_37">
-         <property name="text">
-          <string>History</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QCheckBox" name="checkBox_38">
-         <property name="text">
-          <string>Perception</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QCheckBox" name="checkBox_39">
-         <property name="text">
-          <string>Survival</string>
-         </property>
-        </widget>
-       </item>
-      </layout>
+      <layout class="QVBoxLayout" name="skillColumn6"/>
      </item>
     </layout>
    </widget>
@@ -816,9 +688,9 @@ border-style: outset;</string>
    <widget class="QLabel" name="error">
     <property name="geometry">
      <rect>
-      <x>280</x>
+      <x>210</x>
       <y>660</y>
-      <width>261</width>
+      <width>401</width>
       <height>31</height>
      </rect>
     </property>

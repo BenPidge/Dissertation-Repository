@@ -18,7 +18,8 @@ class SelectorMenu:
                              "They lay themselves as mysterious to others, while they use forbidden magic to "
                              "manipulate others into following them in a hivemind-esque mentality."}
 
-    spinners = dict()
+    abilitySpinners = dict()
+    skillCheckBoxes = []
 
     def __init__(self):
         """
@@ -38,11 +39,13 @@ class SelectorMenu:
         self.setupArchetypeButtons()
         self.setupArchetypeDropdowns()
         self.setupSpinBoxes()
+        self.setupCheckBoxes()
         shadowItems = {"graphicsView": QGraphicsView,
                        "graphicsView_2": QGraphicsView,
                        "startProgram": QPushButton,
                        "advancedFeatures": QPushButton}
         self.setupShadows(shadowItems)
+        self.centre.findChild(QLabel, "error").setAlignment(Qt.AlignCenter)
 
         self.centre.findChild(QPushButton, "startProgram").clicked.\
             connect(partial(self.setupStartButton))
@@ -68,10 +71,15 @@ class SelectorMenu:
 
     def setupStartButton(self):
         values = [["str"], ["dex"], ["con"], ["int"], ["wis"], ["cha"]]
-        spinners = self.spinners
+        spinners = self.abilitySpinners
         for x in range(0, len(spinners.items())):
             values[x].append(list(spinners.values())[x][0].value())
-        self.checkAbilityBoundaries(values)
+
+        errorCode = self.checkAbilityBoundaries(values) + " " + self.checkSkills()
+        self.centre.findChild(QLabel, "error").setText(errorCode)
+        if errorCode == " ":
+            # start the program
+            pass
 
     def archetypeButtonPressed(self, arch_desc):
         """
@@ -114,13 +122,65 @@ class SelectorMenu:
             column = abilityLayout.findChild(QVBoxLayout, directions[x % 3] + "Column")
             layout = column.findChild(QHBoxLayout, abilities[x] + "Layout")
             spinMin, spinMax = self.setupAbilitiesBoxes(layout)
-            self.spinners.update({abilities[x]: [spinMin, spinMax]})
+            self.abilitySpinners.update({abilities[x]: [spinMin, spinMax]})
 
-    def checkAbilityBoundaries(self, spinners):
+    def setupCheckBoxes(self):
+        """
+        Creates all skill check boxes in their appropriate location.
+        """
+        skillLayout = self.centre.findChild(QHBoxLayout, "skills")
+        boxNames = [["Acrobatics", "Insight", "Performance"], ["Animal Handling", "Intimidation", "Persuasion"],
+                    ["Arcana", "Investigation", "Religion"], ["Athletics", "Medicine", "Sleight of Hand"],
+                    ["Deception", "Nature", "Stealth"], ["History", "Perception", "Survival"]]
+        for x in range(6):
+            column = skillLayout.findChild(QVBoxLayout, "skillColumn" + str(x+1))
+            for y in range(3):
+                nextBox = QCheckBox()
+                nextBox.setText(boxNames[x][y])
+                column.addWidget(nextBox)
+                self.skillCheckBoxes.append(nextBox)
+
+    def checkSkills(self):
+        """
+        Checks there isn't an excess amount of skills selected.
+        :return: the error code, or lack of, the spinners produce
+        """
+        skillsLeft = 8
+        for box in self.skillCheckBoxes:
+            if box.isChecked():
+                skillsLeft -= 1
+        if skillsLeft < 0:
+            return "Too many skills selected."
+        else:
+            return ""
+
+    @staticmethod
+    def setupAbilitiesBoxes(layout):
+        """
+        Creates two spinners for an ability, separated with a "to" label.
+        :param layout: the layout to append these to
+        :return: the two spinners created
+        """
+        minSpin = QSpinBox()
+        minSpin.setMinimum(8)
+        minSpin.setMaximum(17)
+        label = QLabel("to")
+        maxSpin = QSpinBox()
+        maxSpin.setMinimum(8)
+        maxSpin.setMaximum(17)
+        maxSpin.setValue(17)
+        layout.addWidget(minSpin)
+        layout.addWidget(label)
+        layout.addWidget(maxSpin)
+        return minSpin, maxSpin
+
+    @staticmethod
+    def checkAbilityBoundaries(spinners):
         """
         Checks if the lowest abilities meet the point-buy maximum.
         :param spinners: the name and value of the lowest value spinners, in a 2D array
         :type spinners: list
+        :return: the error code, or lack of, the spinners produce
         """
         pointsLeft = 27
         racePoints = {"str": ["con", "cha"], "dex": ["con", "int", "wis", "cha"], "con": ["str", "str", "wis"],
@@ -158,29 +218,7 @@ class SelectorMenu:
         if valid is True:
             valid = pointsLeft >= 0
         if valid is False:
-            self.centre.findChild(QLabel, "error").setText("Abilities set too high.")
-            self.centre.findChild(QLabel, "error").setAlignment(Qt.AlignCenter)
+            return "Abilities set too high."
         else:
-            self.centre.findChild(QLabel, "error").setText("")
-
-
-    @staticmethod
-    def setupAbilitiesBoxes(layout):
-        """
-        Creates two spinners for an ability, separated with a "to" label.
-        :param layout: the layout to append these to
-        :return: the two spinners created
-        """
-        minSpin = QSpinBox()
-        minSpin.setMinimum(8)
-        minSpin.setMaximum(17)
-        label = QLabel("to")
-        maxSpin = QSpinBox()
-        maxSpin.setMinimum(8)
-        maxSpin.setMaximum(17)
-        maxSpin.setValue(17)
-        layout.addWidget(minSpin)
-        layout.addWidget(label)
-        layout.addWidget(maxSpin)
-        return minSpin, maxSpin
+            return ""
 

@@ -94,7 +94,7 @@ def add_item():
     Produces a simple text menu to allow the user to select which kind of item they wish to add.
     This is used for simple navigation during the database filling process.
     """
-    print("Choose one of the options below to add, or 9 to exit:\n"
+    print("Choose one of the options below to add, or 13 to exit:\n"
           "1. Spells\n"
           "2. Languages\n"
           "3. Proficiencies\n"
@@ -105,7 +105,9 @@ def add_item():
           "8. Subrace\n"
           "9. Class\n"
           "10. Subclass\n"
-          "11. Exit\n")
+          "11. Tag\n"
+          "12. Archetype\n"
+          "13. Exit\n")
     value = Db.int_input("> ")
     if value == 1:
         add_spells()
@@ -127,6 +129,10 @@ def add_item():
         add_class()
     elif value == 10:
         add_subclass()
+    elif value == 11:
+        add_tag()
+    elif value == 12:
+        add_archetype()
 
 
 def print_all_added_data():
@@ -137,7 +143,8 @@ def print_all_added_data():
     """
     tables = [["Spell", "Spells"], ["Proficiency", "Proficiencies"], ["Language", "Languages"],
               ["Equipment", "Equipment"], ["Background", "Backgrounds"], ["Race", "Races"], ["Subrace", "Subraces"],
-              ["Trait", "Traits"], ["Class", "Classes"], ["Subclass", "Subclasses"]]
+              ["Trait", "Traits"], ["Class", "Classes"], ["Subclass", "Subclasses"], ["Tag", "Tags"],
+              ["Archetype", "Archetypes"]]
     for table in tables:
         print_added_table(table[0], table[1])
     print("\n")
@@ -402,6 +409,64 @@ def add_trait():
                                   "VALUES(?, ?, ?, ?);", (traitOptionId, traitId, desc, value))
             addOption = add_another_item()
         print("All trait options are added\n")
+
+        addMore = add_another_item()
+
+
+def add_tag():
+    """
+    Adds a tag, and connections, to the database.
+    """
+    Db.cursor.execute("UPDATE Tag SET tagSubgroup='Combat' WHERE tagName='Weapons' OR tagName='Melee'")
+    Db.cursor.execute("SELECT proficiencyType FROM Proficiency")
+    types = set(Db.cursor.fetchall())
+    print(types)
+    Db.cursor.execute("SELECT COUNT(*) FROM Tag")
+    tagId = Db.cursor.fetchone()[0]
+    addMore = True
+    while addMore:
+        tagId += 1
+        name = input("Enter the name of the tag to add: ")
+        subgroup = input("Enter the subgroup the tag is a part of: ")
+        Db.cursor.execute("INSERT INTO Tag(tagId, tagName, tagSubgroup) VALUES(?, ?, ?)", (tagId, name, subgroup))
+
+        addProf = True
+        while addProf:
+            prof = input("Enter the next proficiency it links to, or GROUP group_name for a collection: ")
+            if prof.startswith("GROUP"):
+                Db.cursor.execute("SELECT proficiencyId FROM Proficiency WHERE proficiencyType LIKE '%" +
+                                  prof[6:].replace("'", "''") + "%'")
+            else:
+                Db.cursor.execute("INSERT INTO TagProficiency(tagId, proficiencyId) VALUES (?, ?)",
+                                  (tagId, Db.get_id(prof, "Proficiency")))
+            addProf = add_another_item()
+
+        addMore = add_another_item()
+
+
+def add_archetype():
+    """
+    Adds an archetype, and connections, to the database.
+    """
+    Db.cursor.execute("SELECT COUNT(*) FROM Archetype")
+    archId = Db.cursor.fetchone()[0]
+    addMore = True
+    while addMore:
+        archId += 1
+        name = input("Insert the name of the archetype: ")
+        desc = input("Enter the description: ")
+        magicWeight = Db.float_input("Enter the magic weighting: ")
+        healthWeight = Db.float_input("Enter the health weighting: ")
+        Db.cursor.execute("INSERT INTO Archetype(archetypeId, archetypeName, description, magicWeighting, "
+                          "healthWeighting) VALUES(?, ?, ?, ?, ?)", (archId, name, desc, magicWeight, healthWeight))
+
+        addTag = True
+        while addTag:
+            name = input("Enter the name of the next tag: ")
+            weight = Db.float_input("Enter the weighting value of the tag: ")
+            Db.cursor.execute("INSERT INTO ArchetypeTag(archetypeId, tagId, weighting) VALUES(?, ?, ?)",
+                              (archId, Db.get_id(name, "Tag"), weight))
+            addTag = add_another_item()
 
         addMore = add_another_item()
 
