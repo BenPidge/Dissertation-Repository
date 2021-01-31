@@ -32,24 +32,24 @@ class SelectorMenu:
         """
         self.controller = controller
 
-        self.setupArchetypes()
-        self.setupArchetypeBtns()
-        self.setupArchetypeDropdowns()
-        self.setupSpinBoxes()
-        self.setupCheckBoxes()
-        self.setupAdvancedBtn()
+        self.setup_archetypes()
+        self.setup_archetype_btns()
+        self.setup_archetype_dropdowns()
+        self.setup_spin_boxes()
+        self.setup_check_boxes()
+        self.setup_advanced_btn()
         shadowItems = {"graphicsView": QGraphicsView,
                        "graphicsView_2": QGraphicsView,
                        "startProgram": QPushButton}
-        self.centre = self.controller.setupShadows(self.centre, shadowItems)
+        self.centre = self.controller.setup_shadows(self.centre, shadowItems)
 
         self.centre.findChild(QLabel, "error").setAlignment(Qt.AlignCenter)
         self.centre.findChild(QPushButton, "startProgram").clicked.\
-            connect(partial(self.setupStartBtn))
+            connect(partial(self.setup_start_btn))
 
         self.window.show()
 
-    def setupArchetypes(self):
+    def setup_archetypes(self):
         """
         Sets up the global archetypes dictionary to be filled with the database contents
         """
@@ -57,7 +57,7 @@ class SelectorMenu:
         for name, desc in Db.cursor.fetchall():
             self.archetypes.update({name: desc})
 
-    def setupArchetypeBtns(self):
+    def setup_archetype_btns(self):
         """
         Sets up the button selections for choosing an archetype description to view.
         """
@@ -68,24 +68,24 @@ class SelectorMenu:
         for name, desc in sorted(self.archetypes.items()):
             btn = QPushButton(text=name)
             btn.setStyleSheet("background-color: rgb(255, 255, 255);")
-            btn.clicked.connect(partial(self.archetypeButtonPressed, arch_desc=desc))
+            btn.clicked.connect(partial(self.archetype_button_pressed, arch_desc=desc))
             vbox.addWidget(btn)
         widget.setLayout(vbox)
         scrollArea.setWidget(widget)
 
-    def setupStartBtn(self):
+    def setup_start_btn(self):
         values = [["str"], ["dex"], ["con"], ["int"], ["wis"], ["cha"]]
         spinners = self.abilitySpinners
         for x in range(0, len(spinners.items())):
             values[x].append(list(spinners.values())[x][0].value())
 
-        errorCode = self.checkAbilityBoundaries(values) + " " + self.checkSkills()
+        errorCode = self.check_ability_boundaries(values) + " " + self.check_skills()
         self.centre.findChild(QLabel, "error").setText(errorCode)
         if errorCode == " ":
             # start the program
             pass
 
-    def setupAdvancedBtn(self):
+    def setup_advanced_btn(self):
         """
         Sets up the advanced filters button.
         """
@@ -94,10 +94,10 @@ class SelectorMenu:
         shadow = QGraphicsDropShadowEffect()
         shadow.setBlurRadius(15)
         advFilters.setGraphicsEffect(shadow)
-        advFilters.clicked.connect(partial(self.controller.startAdvancedFiltersMenu))
+        advFilters.clicked.connect(partial(self.controller.start_advanced_filters_menu))
         self.centre.findChild(QVBoxLayout, "filtersLayout").addWidget(advFilters)
 
-    def archetypeButtonPressed(self, arch_desc):
+    def archetype_button_pressed(self, arch_desc):
         """
         When pressed, the button sets the text box to the buttons' archetype description.
         :param arch_desc: the description of the selected archetype
@@ -106,7 +106,7 @@ class SelectorMenu:
         archDesc = self.centre.findChild(QTextEdit, "archetypeDesc")
         archDesc.setPlainText(arch_desc)
 
-    def setupArchetypeDropdowns(self):
+    def setup_archetype_dropdowns(self):
         """
         Sets up the dropdown boxes to show all archetypes.
         """
@@ -116,7 +116,7 @@ class SelectorMenu:
             primaryDropdown.addItem(archetype)
             secondaryDropdown.addItem(archetype)
 
-    def setupSpinBoxes(self):
+    def setup_spin_boxes(self):
         """
         Creates and stores all spinners for the abilities.
         """
@@ -126,10 +126,10 @@ class SelectorMenu:
         for x in range(0, len(abilities)):
             column = abilityLayout.findChild(QVBoxLayout, directions[x % 3] + "Column")
             layout = column.findChild(QHBoxLayout, abilities[x] + "Layout")
-            spinMin, spinMax = self.setupAbilitiesBoxes(layout)
+            spinMin, spinMax = self.setup_abilities_boxes(layout)
             self.abilitySpinners.update({abilities[x]: [spinMin, spinMax]})
 
-    def setupCheckBoxes(self):
+    def setup_check_boxes(self):
         """
         Creates all skill check boxes in their appropriate location.
         """
@@ -145,7 +145,7 @@ class SelectorMenu:
                 column.addWidget(nextBox)
                 self.skillCheckBoxes.append(nextBox)
 
-    def checkSkills(self):
+    def check_skills(self):
         """
         Checks there isn't an excess amount of skills selected.
         :return: the error code, or lack of, the spinners produce
@@ -160,7 +160,7 @@ class SelectorMenu:
             return ""
 
     @staticmethod
-    def setupAbilitiesBoxes(layout):
+    def setup_abilities_boxes(layout):
         """
         Creates two spinners for an ability, separated with a "to" label.
         :param layout: the layout to append these to
@@ -180,7 +180,7 @@ class SelectorMenu:
         return minSpin, maxSpin
 
     @staticmethod
-    def checkAbilityBoundaries(spinners):
+    def check_ability_boundaries(spinners):
         """
         Checks if the lowest abilities meet the point-buy maximum.
         :param spinners: the name and value of the lowest value spinners, in a 2D array

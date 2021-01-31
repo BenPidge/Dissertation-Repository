@@ -35,14 +35,15 @@ class Character:
         self.race = race
         self.chrClass = chr_class
         self.background = background
+        self.proficiencyBonus = 2
 
-        self.abilityScores = self.setupAbilityScores(ability_scores)
+        self.abilityScores = self.setup_ability_scores(ability_scores)
         self.languages = race.languages + chr_class.languages + background.languages
         self.traits = race.traits + chr_class.traits
-        self.proficiencies = self.setupProficiencies()
-        self.magic = self.setupMagic()
+        self.proficiencies = self.setup_proficiencies()
+        self.magic = self.setup_magic()
 
-    def setupAbilityScores(self, ability_scores):
+    def setup_ability_scores(self, ability_scores):
         """
         Adds the racial ability score increases to the inputted ability scores.
         :param ability_scores: each ability score, linked as a key to it's current value.
@@ -54,7 +55,23 @@ class Character:
                 ability_scores[ability] = ability_scores[ability] + self.race.abilityScores[ability]
         return ability_scores
 
-    def setupProficiencies(self):
+    def get_skill_value(self, skill):
+        """
+        Gets a single skills' value.
+        :param skill: the name of the skill to get the value for
+        :type skill: str
+        :return: an integer of the value
+        """
+        value = 0
+        if skill in self.proficiencies:
+            value += self.proficiencyBonus
+        for x in range(0, len(self.skills)):
+            if skill in self.skills[x]:
+                value += self.abilityScores.get(self.abilities[x])
+                break
+        return value
+
+    def setup_proficiencies(self):
         """
         For every proficiency gained from any source, sort it into one of four categories:
         armor, weapons, tools, saving throws. Connect these categories and proficiencies with a dictionary of arrays.
@@ -73,7 +90,7 @@ class Character:
 
         return {"Armor": armor, "Weapons": weapons, "Tools": tools, "Saving throws": saving_throws}
 
-    def setupMagic(self):
+    def setup_magic(self):
         """
         Sets up the character's magic.
         :return: the magic object created to represent this

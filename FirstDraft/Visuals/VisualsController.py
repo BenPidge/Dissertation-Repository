@@ -17,14 +17,14 @@ class VisualsController:
         self.selectorMenu.begin(self)
         self.app.exec_()
 
-    def startAdvancedFiltersMenu(self):
+    def start_advanced_filters_menu(self):
         """
         Starts up the advanced filters menu window.
         """
         self.advancedFiltersMenu.begin(self)
         self.selectorMenu.window.hide()
 
-    def stopAdvancedFiltersMenu(self):
+    def stop_advanced_filters_menu(self):
         """
         Visually stops the advanced filters menu window.
         """
@@ -32,7 +32,7 @@ class VisualsController:
         self.selectorMenu.window.show()
 
     @staticmethod
-    def setupShadows(centre, shadow_items):
+    def setup_shadows(centre, shadow_items):
         """
         Sets up the shadows for all widgets passed through.
         :param shadow_items: a name:type dictionary of widgets to give shadows

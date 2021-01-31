@@ -1,5 +1,4 @@
 from functools import partial
-
 from PyQt5 import uic
 from PyQt5.QtWidgets import *
 
@@ -28,15 +27,15 @@ class AdvancedFiltersMenu:
         self.controller = controller
 
         shadowItems = {"graphicsView": QGraphicsView}
-        self.centre = self.controller.setupShadows(self.centre, shadowItems)
+        self.centre = self.controller.setup_shadows(self.centre, shadowItems)
 
         btn = self.centre.findChild(QPushButton, "saveAdvancedOptions")
-        btn.clicked.connect(partial(self.saveBtnClicked))
+        btn.clicked.connect(partial(self.save_btn_clicked))
 
         self.window.show()
 
-    def saveBtnClicked(self):
+    def save_btn_clicked(self):
         """
         Reacts to the save advanced options button being placed, by calling the controller.
         """
-        self.controller.stopAdvancedFiltersMenu()
+        self.controller.stop_advanced_filters_menu()
