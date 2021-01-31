@@ -22,15 +22,33 @@ class Chromosome:
         self.tags = tags
         self.magicWeight = magic_weight
         self.healthWeight = health_weight
+
+        # tagsFitness is a 2D array with nested array layouts of [tag, tags' weighting, tags' individual fitness]
+        self.tagsFitness = []
+        for (tag, weight) in self.tags:
+            self.tagsFitness.append([tag, weight, 0])
+
         self.extract_tags()
+
+    def update_indiv_tag_fitness(self, tag, addition):
+        """
+        Updates the fitness value of a given tag.
+        :param tag: the tag to update the fitness of
+        :type tag: str
+        :param addition: the amount to increase the tag fitness by
+        :type addition: int
+        """
+        # flatten tagsFitness to get the tags' array index from the name
+        index = int(list(itertools.chain(*self.tagsFitness)).index(tag) / 3)
+        self.tagsFitness[index][2] += addition * self.tagsFitness[index][1]
 
     def extract_tags(self):
         """
         Extracts the needed information from each tag.
         """
-        self.fitness += self.ability_scores_tag()
+        self.ability_scores_tag()
         for (tag, weight) in self.tags:
-            self.fitness += (self.get_tag_fitness(tag) * weight)
+            self.update_indiv_tag_fitness(tag, self.get_tag_fitness(tag))
 
     def get_tag_fitness(self, tag):
         """
@@ -66,12 +84,8 @@ class Chromosome:
         """
         Converts the current ability scores into one weighted integer, if they're related to tag.
         """
-        values = 0
         potentialTags = ["strong", "dexterous", "health", "wise", "knowledgeable", "charismatic"]
         # for every archetype-owned tag within potentialTags, ignoring casing
         for tag in list(set([x.lower() for x in potentialTags]) & set([x.lower() for x in self.tags])):
-            # flatter self.tags to get the index for the tags' weighting
-            index = int(list(itertools.chain(*self.tags)).index("d")/2)
-            values += self.character.abilityScores.items()[potentialTags.index(tag)] * self.tags[index][1]
-
-        return values
+            value = self.character.abilityScores.items()[potentialTags.index(tag)]
+            self.update_indiv_tag_fitness(tag, value)
