@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>811</width>
-    <height>728</height>
+    <height>710</height>
    </rect>
   </property>
   <property name="palette">
@@ -274,19 +274,6 @@ border-style: outset;</string>
     </property>
     <property name="text">
      <string>Start Program</string>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="advancedFeatures">
-    <property name="geometry">
-     <rect>
-      <x>320</x>
-      <y>630</y>
-      <width>161</width>
-      <height>31</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Advanced Features ►</string>
     </property>
    </widget>
    <widget class="QLabel" name="label">
@@ -705,6 +692,17 @@ font: 14pt &quot;MS Shell Dlg 2&quot;;</string>
      <string/>
     </property>
    </widget>
+   <widget class="QWidget" name="verticalLayoutWidget">
+    <property name="geometry">
+     <rect>
+      <x>310</x>
+      <y>630</y>
+      <width>181</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <layout class="QVBoxLayout" name="filtersLayout"/>
+   </widget>
    <zorder>graphicsView_2</zorder>
    <zorder>graphicsView</zorder>
    <zorder>primaryArchetypes</zorder>
@@ -712,7 +710,6 @@ font: 14pt &quot;MS Shell Dlg 2&quot;;</string>
    <zorder>archetypeDescSelect</zorder>
    <zorder>archetypeDesc</zorder>
    <zorder>startProgram</zorder>
-   <zorder>advancedFeatures</zorder>
    <zorder>label</zorder>
    <zorder>horizontalLayoutWidget</zorder>
    <zorder>horizontalLayoutWidget_2</zorder>
@@ -721,6 +718,7 @@ font: 14pt &quot;MS Shell Dlg 2&quot;;</string>
    <zorder>label_4</zorder>
    <zorder>label_5</zorder>
    <zorder>error</zorder>
+   <zorder>verticalLayoutWidget</zorder>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">

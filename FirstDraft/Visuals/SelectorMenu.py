@@ -3,57 +3,61 @@ from functools import partial
 from PyQt5 import uic
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import *
+from Database import CoreDatabase as Db
 
 
 class SelectorMenu:
-    archetypes = {"Monster Hunter": "The monster hunter is an expert in killing large creatures, typically using "
-                                    "equally large weapons to do so. They’re brave and strong, with heavy experience "
-                                    "and knowledge in hunting their enemies for reward.",
-                  "Sage": "Wise old advisors, sages are known for their magical capabilities, often with nature. "
-                          "They’re the first to aid others, and are often good at treating wounded allies or "
-                          "handling their problems.",
-                  "Entertainer": "Entertainers focus on their charm and musical capabilities to get through life. Some "
-                                 "may use this to support their friends, while others use it to manipulate and fool.",
-                  "Cultist": "Cultists are creepy practitioners in the dark arts, normally to fulfil evil intentions. "
-                             "They lay themselves as mysterious to others, while they use forbidden magic to "
-                             "manipulate others into following them in a hivemind-esque mentality."}
+    """Sets up and runs the menu that allows the basic character selection and filtering."""
 
+    archetypes = dict()
     abilitySpinners = dict()
     skillCheckBoxes = []
+    controller = None
 
     def __init__(self):
         """
         Sets up the selector menu visuals.
         """
         Form, Window = uic.loadUiType("Visuals/SelectorMenu.ui")
-        self.app = QApplication([])
         self.window = Window()
         self.form = Form()
         self.form.setupUi(self.window)
         self.centre = self.window.findChild(QWidget, "centralwidget")
 
-    def begin(self):
+    def begin(self, controller):
         """
         Begins the selector menu and visualises it.
+        :param controller: the controller for the programs visuals
+        :type controller: VisualsController
         """
-        self.setupArchetypeButtons()
+        self.controller = controller
+
+        self.setupArchetypes()
+        self.setupArchetypeBtns()
         self.setupArchetypeDropdowns()
         self.setupSpinBoxes()
         self.setupCheckBoxes()
+        self.setupAdvancedBtn()
         shadowItems = {"graphicsView": QGraphicsView,
                        "graphicsView_2": QGraphicsView,
-                       "startProgram": QPushButton,
-                       "advancedFeatures": QPushButton}
-        self.setupShadows(shadowItems)
-        self.centre.findChild(QLabel, "error").setAlignment(Qt.AlignCenter)
+                       "startProgram": QPushButton}
+        self.centre = self.controller.setupShadows(self.centre, shadowItems)
 
+        self.centre.findChild(QLabel, "error").setAlignment(Qt.AlignCenter)
         self.centre.findChild(QPushButton, "startProgram").clicked.\
-            connect(partial(self.setupStartButton))
+            connect(partial(self.setupStartBtn))
 
         self.window.show()
-        self.app.exec_()
 
-    def setupArchetypeButtons(self):
+    def setupArchetypes(self):
+        """
+        Sets up the global archetypes dictionary to be filled with the database contents
+        """
+        Db.cursor.execute("SELECT archetypeName, description FROM Archetype")
+        for name, desc in Db.cursor.fetchall():
+            self.archetypes.update({name: desc})
+
+    def setupArchetypeBtns(self):
         """
         Sets up the button selections for choosing an archetype description to view.
         """
@@ -61,7 +65,7 @@ class SelectorMenu:
         vbox = QVBoxLayout()
         widget = QWidget()
 
-        for name, desc in self.archetypes.items():
+        for name, desc in sorted(self.archetypes.items()):
             btn = QPushButton(text=name)
             btn.setStyleSheet("background-color: rgb(255, 255, 255);")
             btn.clicked.connect(partial(self.archetypeButtonPressed, arch_desc=desc))
@@ -69,7 +73,7 @@ class SelectorMenu:
         widget.setLayout(vbox)
         scrollArea.setWidget(widget)
 
-    def setupStartButton(self):
+    def setupStartBtn(self):
         values = [["str"], ["dex"], ["con"], ["int"], ["wis"], ["cha"]]
         spinners = self.abilitySpinners
         for x in range(0, len(spinners.items())):
@@ -80,6 +84,18 @@ class SelectorMenu:
         if errorCode == " ":
             # start the program
             pass
+
+    def setupAdvancedBtn(self):
+        """
+        Sets up the advanced filters button.
+        """
+        advFilters = QPushButton("Advanced Filters ►")
+        advFilters.setStyleSheet("font: 10pt;")
+        shadow = QGraphicsDropShadowEffect()
+        shadow.setBlurRadius(15)
+        advFilters.setGraphicsEffect(shadow)
+        advFilters.clicked.connect(partial(self.controller.startAdvancedFiltersMenu))
+        self.centre.findChild(QVBoxLayout, "filtersLayout").addWidget(advFilters)
 
     def archetypeButtonPressed(self, arch_desc):
         """
@@ -96,20 +112,9 @@ class SelectorMenu:
         """
         primaryDropdown = self.centre.findChild(QComboBox, "primaryArchetypes")
         secondaryDropdown = self.centre.findChild(QComboBox, "secondaryArchetypes")
-        for archetype in list(self.archetypes.keys()):
+        for archetype in sorted(list(self.archetypes.keys())):
             primaryDropdown.addItem(archetype)
             secondaryDropdown.addItem(archetype)
-
-    def setupShadows(self, shadow_items):
-        """
-        Sets up the shadows for all widgets passed through.
-        :param shadow_items: a name:type dictionary of widgets to give shadows
-        :type shadow_items: dict
-        """
-        for item, obj in shadow_items.items():
-            shadow = QGraphicsDropShadowEffect()
-            shadow.setBlurRadius(15)
-            self.centre.findChild(obj, item).setGraphicsEffect(shadow)
 
     def setupSpinBoxes(self):
         """
@@ -221,4 +226,3 @@ class SelectorMenu:
             return "Abilities set too high."
         else:
             return ""
-

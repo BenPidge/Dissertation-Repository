@@ -1,8 +1,8 @@
 from Database import DatabaseSetup, DataExtractor, CoreDatabase, DataConverter
-from Visuals import SelectorMenu
+from Visuals import VisualsController
 
 
-selectorMenu = SelectorMenu.SelectorMenu()
+visuals = VisualsController.VisualsController()
 
 
 def begin():
@@ -10,7 +10,7 @@ def begin():
     Begins the program.
     """
     print("Enter which service you'd like to use:\n"
-          "1. Selector Menu\n"
+          "1. Visuals\n"
           "2. Database Setup\n"
           "3. Data Extractor\n"
           "4. Data Converter\n"
@@ -19,7 +19,7 @@ def begin():
     menu = CoreDatabase.int_input("> ")
     DataConverter.create_all_equipment()
     if menu == 1:
-        selectorMenu.begin()
+        visuals.begin()
     elif menu == 2:
         DatabaseSetup.begin()
     elif menu == 3:
