@@ -553,12 +553,99 @@ CREATE TABLE IF NOT EXISTS `ArchetypeTag` (
 
 
 -- -----------------------------------------------------
+-- Table `GenericTag`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `GenericTag` (
+  `genericTagId` INT UNSIGNED NOT NULL,
+  `genericTagName` VARCHAR(45) NOT NULL,
+  PRIMARY KEY (`genericTagId`))
+
+
+-- -----------------------------------------------------
+-- Table `EquipmentTag`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `EquipmentTag` (
+  `genericTagId` INT UNSIGNED NOT NULL,
+  `equipmentId` INT UNSIGNED NOT NULL,
+  PRIMARY KEY (`genericTagId`, `equipmentId`),
+  CONSTRAINT `genericTagId`
+    FOREIGN KEY (`genericTagId`)
+    REFERENCES `GenericTag` (`genericTagId`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `equipmentId`
+    FOREIGN KEY (`equipmentId`)
+    REFERENCES `Equipment` (`equipmentId`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+
+
+-- -----------------------------------------------------
+-- Table `TraitTag`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `TraitTag` (
+  `genericTagId` INT UNSIGNED NOT NULL,
+  `traitId` INT UNSIGNED NOT NULL,
+  PRIMARY KEY (`genericTagId`, `traitId`),
+  CONSTRAINT `genericTagId`
+    FOREIGN KEY (`genericTagId`)
+    REFERENCES `GenericTag` (`genericTagId`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `traitId`
+    FOREIGN KEY (`traitId`)
+    REFERENCES `Trait` (`traitId`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+
+
+-- -----------------------------------------------------
+-- Table `ArchTagConn`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `ArchTagConn` (
+  `genericTagId` INT UNSIGNED NOT NULL,
+  `tagId` INT UNSIGNED NOT NULL,
+  PRIMARY KEY (`genericTagId`, `tagId`),
+  CONSTRAINT `genericTagId`
+    FOREIGN KEY (`genericTagId`)
+    REFERENCES `GenericTag` (`genericTagId`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `tagId`
+    FOREIGN KEY (`tagId`)
+    REFERENCES `Tag` (`tagId`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+
+
+-- -----------------------------------------------------
+-- Table `SpellTag`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `SpellTag` (
+  `genericTagId` INT UNSIGNED NOT NULL,
+  `equipmentId` INT UNSIGNED NOT NULL,
+  PRIMARY KEY (`genericTagId`, `spellId`),
+  CONSTRAINT `genericTagId`
+    FOREIGN KEY (`genericTagId`)
+    REFERENCES `GenericTag` (`genericTagId`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `spellId`
+    FOREIGN KEY (`spellId`)
+    REFERENCES `Spell` (`spellId`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+
+
+-- -----------------------------------------------------
 -- Table `Tag`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `Tag` (
   `tagId` INT UNSIGNED NOT NULL,
   `tagName` VARCHAR(45) NOT NULL,
   `tagSubgroup` VARCHAR(45) NOT NULL,
+  `equipmentTags` VARCHAR(45) NULL,
+  'traitTags' VARCHAR(45) NULL,
   PRIMARY KEY (`tagId`))
 
 
