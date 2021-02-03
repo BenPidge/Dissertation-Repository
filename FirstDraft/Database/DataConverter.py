@@ -492,11 +492,5 @@ def begin():
     """
     Begins the use of the data conversion.
     """
-
-    Db.cursor.execute("SELECT tagId FROM Tag WHERE tagName='Musical'")
-    tagId = str(Db.cursor.fetchone()[0])
-    Db.cursor.execute("SELECT genericTagId FROM ArchTagConn WHERE tagId=" + tagId)
-    for tag in Db.cursor.fetchall():
-        Db.cursor.execute("SELECT genericTagName FROM GenericTag WHERE genericTagId=" + str(tag[0]))
-        print(Db.cursor.fetchall())
+    return
 

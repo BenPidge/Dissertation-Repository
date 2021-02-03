@@ -279,25 +279,14 @@ def equipment_items():
     Db.cursor.execute("SELECT * FROM Equipment")
     allData = Db.cursor.fetchall()
     allEquipment = []
-    for (eId, tags, desc, diceSides, diceNum, armorClass, weight, value, name) in allData:
-        equip = [name, tags.split(", "), desc, str(diceNum) + "d" + str(diceSides), armorClass, weight, value]
-        for tag in tags.split(", "):
-            if "Ammunition" in tag:
-                values = re.findall(r'\d+', tag)
-                if len(values) > 0:
-                    equip.append(values)
-                    equip[1].remove(tag)
-                    equip[1].append("Ammunition")
-            elif "Thrown" in tag:
-                values = re.findall(r'\d+', tag)
-                if len(values) > 0:
-                    equip.append(values)
-                    equip[1].remove(tag)
-                    equip[1].append("Thrown")
-            elif "Str " in tag:
-                equip.insert(7, int(tag[-2:]))
-                equip[1].remove(tag)
-                equip[1].append("Str limit")
+    for (eId, desc, diceSides, diceNum, armorClass, weight, value, name) in allData:
+        tags = []
+        Db.cursor.execute("SELECT genericTagId FROM EquipmentTag WHERE equipmentId=" + str(eId))
+        for tag in Db.cursor.fetchall():
+            Db.cursor.execute("SELECT genericTagName FROM GenericTag where genericTagId=" + str(tag[0]))
+            tags.append(Db.cursor.fetchone()[0])
+
+        equip = [name, tags, desc, str(diceNum) + "d" + str(diceSides), armorClass, weight, value]
         allEquipment.append(equip)
     return allEquipment
 
@@ -315,11 +304,12 @@ def spell_info(spell_name, chr_level=1):
     lvl, castingTime, duration, sRange, area, components, atOrSave, school, damOrEffect, desc = Db.cursor.fetchone()[2:]
     damage, attack, save = None, None, None
 
-    # converts damOrEffect into the damage and the tags
-    tags = damOrEffect.split(", ")
-    if damOrEffect[0].isdigit():
-        damage = tags[0]
-        tags.pop(0)
+    # gets the spells' tags
+    tags = []
+    Db.cursor.execute("SELECT genericTagId FROM SpellTag WHERE spellId=" + Db.get_id(spell_name, "Spell"))
+    for tag in Db.cursor.fetchall():
+        Db.cursor.execute("SELECT genericTagName FROM GenericTag where genericTagId=" + str(tag[0]))
+        tags.append(Db.cursor.fetchone()[0])
 
     # separates atOrSave into it's appropriate variable
     if "Save" in atOrSave:

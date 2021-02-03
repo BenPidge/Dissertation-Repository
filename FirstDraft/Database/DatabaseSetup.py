@@ -383,15 +383,19 @@ def add_trait():
         traitId += 1
         name = input("Enter the trait's name: ")
         description = input("Enter the trait's description: ")
-        tag = input("Enter the tag or tags this tag involves: ")
+        tags = input("Enter the tag or tags this tag involves: ")
         tagValue = Db.int_input("Enter the value related to this tag, or -1 if there isn't one: ")
 
         if tagValue == -1:
-            Db.cursor.execute("INSERT INTO Trait(traitId, traitName, traitDescription, traitTag) "
-                              "VALUES(?, ?, ?, ?);", (traitId, name, description, tag))
+            Db.cursor.execute("INSERT INTO Trait(traitId, traitName, traitDescription) "
+                              "VALUES(?, ?, ?, ?);", (traitId, name, description))
         else:
-            Db.cursor.execute("INSERT INTO Trait(traitId, traitName, traitDescription, traitTag, traitTagValue) "
-                              "VALUES(?, ?, ?, ?, ?);", (traitId, name, description, tag, tagValue))
+            Db.cursor.execute("INSERT INTO Trait(traitId, traitName, traitDescription, traitTagValue) "
+                              "VALUES(?, ?, ?, ?, ?);", (traitId, name, description, tagValue))
+
+        for tag in tags.split(", "):
+            Db.cursor.execute("INSERT INTO TraitTag(genericTagId, traitId) VALUES(?, ?)",
+                              (Db.get_id(tag, "GenericTag"), traitId))
 
         addOption = input("Does this trait have options? (Y/N) ") == "Y"
         Db.cursor.execute("SELECT COUNT(*) FROM TraitOption")
@@ -908,7 +912,7 @@ def add_class_traits(class_id, class_options_id, subclass_id=-1):
 
 
 def add_spell(spell_id, name, level, casting_time, duration, spell_range, components, attack_or_save,
-              school, damage_or_effect, description, area):
+              school, damage_or_effect, description, area, tags):
     """
     Adds a single spell to the database, adjusting the call based on available data.
     :param spell_id: The unique id of the next spell
@@ -935,6 +939,8 @@ def add_spell(spell_id, name, level, casting_time, duration, spell_range, compon
     :type description: str
     :param area: the area and size kind of the spell
     :type area: str
+    :param tags: the tags that applies to the spell
+    :type tags: str
     """
     insertCall1 = "INSERT INTO Spell(spellId, spellName, spellLevel, castingTime, duration, range, area, " \
                   "components, attackOrSave, school, damageOrEffect, description) " \
@@ -948,6 +954,9 @@ def add_spell(spell_id, name, level, casting_time, duration, spell_range, compon
     else:
         Db.cursor.execute(insertCall2, (spell_id, name, level, casting_time, duration, spell_range, components,
                                         attack_or_save, school, damage_or_effect, description))
+    for tag in tags.split(", "):
+        Db.cursor.execute("INSERT INTO SpellTag(genericTagId, spellId) VALUES(?, ?)",
+                          (Db.get_id(tag, "GenericTag"), spell_id))
 
 
 def add_spells():
@@ -971,8 +980,9 @@ def add_spells():
         school = input("Enter the spells' magic school: ")
         damageOrEffect = input("Enter the dice or number, and damage or effect type, of the spell: ")
         description = input("Enter the spells' description: ")
+        tags = input("Enter the spells' tags: ")
         add_spell(spellId, name, level, castingTime, duration, spellRange, components, attackOrSave, school,
-                  damageOrEffect, description, area)
+                  damageOrEffect, description, area, tags)
 
         addMore = add_another_item()
 
@@ -1035,9 +1045,9 @@ def add_equipment():
                 usedValues.append([value, count])
             count += 1
 
-        sqlCall = "INSERT INTO Equipment(equipmentId, equipmentName, tags"
+        sqlCall = "INSERT INTO Equipment(equipmentId, equipmentName"
         sqlEnd = ") VALUES(?, ?, ?"
-        sqlParams = (equipmentId, equipmentName, tags)
+        sqlParams = (equipmentId, equipmentName)
         for pair in usedValues:
             sqlCall += ", " + sqlValues[pair[1]]
             sqlEnd += ", ?"
@@ -1045,5 +1055,8 @@ def add_equipment():
         sqlCall += sqlEnd + ");"
 
         Db.cursor.execute(sqlCall, sqlParams)
+        for tag in tags.split(", "):
+            Db.cursor.execute("INSERT INTO EquipmentTag(genericTagId, equipmentId) VALUES(?, ?)",
+                              (Db.get_id(tag, "GenericTag"), equipmentId))
 
         addMore = add_another_item()
