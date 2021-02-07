@@ -1,8 +1,14 @@
 from Database import DatabaseSetup, DataExtractor, CoreDatabase, DataConverter
+from Optimisation import Chromosome
 from Visuals import VisualsController
 
 
 visuals = VisualsController.VisualsController()
+
+
+def testing():
+    character = DataConverter.create_character(1)
+    chromosome = Chromosome.Chromosome(character, [["Dexterous", 0.4], ["Heavy Weapons", 0.6], ["Ranged", 0.4]], 0.5, 0.5)
 
 
 def begin():
@@ -15,6 +21,7 @@ def begin():
           "3. Data Extractor\n"
           "4. Data Converter\n"
           "5. View Tables\n"
+          "6. General testing\n"
           "9. Exit")
     menu = CoreDatabase.int_input("> ")
     DataConverter.create_all_equipment()
@@ -28,6 +35,8 @@ def begin():
         DataConverter.begin()
     elif menu == 5:
         CoreDatabase.view_tables()
+    elif menu == 6:
+        testing()
     else:
         SystemExit(0)
     CoreDatabase.complete_setup()

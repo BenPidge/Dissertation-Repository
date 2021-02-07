@@ -31,8 +31,10 @@ def get_names_from_connector(start_table, end_table, input_id=-1, input_name="")
     # determines the name of the intermediary table
     if start_table == "Magic":
         connTable = "ClassSpell"
+    elif start_table == "Tag":
+        connTable = "ArchTagConn"
     else:
-        connTable = start_table.replace("Options", "") + end_table
+        connTable = start_table.replace("Options", "") + end_table.replace("Generic", "")
 
     # determines the required variables for the sql call
     endId = Db.table_to_id(end_table)
@@ -68,7 +70,7 @@ def background_connections(background_name):
     languages = get_names_from_connector("Background", "Language", input_name=background_name)
 
     Db.cursor.execute("SELECT proficiencyName, proficiencyType FROM Proficiency WHERE proficiencyName IN ('"
-                      + "', '".join(proficiencies) + "')")
+                      + "', '".join(proficiencies).replace("'", "''") + "')")
     skills, tools = [], []
     for pair in Db.cursor.fetchall():
         if pair[1] == "Skill":
@@ -279,7 +281,7 @@ def equipment_items():
     Db.cursor.execute("SELECT * FROM Equipment")
     allData = Db.cursor.fetchall()
     allEquipment = []
-    for (eId, desc, diceSides, diceNum, armorClass, weight, value, name) in allData:
+    for (eId, name, desc, diceSides, diceNum, armorClass, weight, value) in allData:
         tags = []
         Db.cursor.execute("SELECT genericTagId FROM EquipmentTag WHERE equipmentId=" + str(eId))
         for tag in Db.cursor.fetchall():
@@ -306,7 +308,7 @@ def spell_info(spell_name, chr_level=1):
 
     # gets the spells' tags
     tags = []
-    Db.cursor.execute("SELECT genericTagId FROM SpellTag WHERE spellId=" + Db.get_id(spell_name, "Spell"))
+    Db.cursor.execute("SELECT genericTagId FROM SpellTag WHERE spellId=" + str(Db.get_id(spell_name, "Spell")))
     for tag in Db.cursor.fetchall():
         Db.cursor.execute("SELECT genericTagName FROM GenericTag where genericTagId=" + str(tag[0]))
         tags.append(Db.cursor.fetchone()[0])

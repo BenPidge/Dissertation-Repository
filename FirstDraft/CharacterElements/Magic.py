@@ -26,9 +26,9 @@ class Magic:
         if known_secondary_spells is None:
             known_secondary_spells = []
         if known_spells is None:
-            self.knownSpells = []
+            known_spells = []
         if prepared_spell_options is None:
-            self.preparedSpellOptions = []
+            prepared_spell_options = []
 
         self.spellAmount = spell_amount
         self.spellSlot = spell_slot

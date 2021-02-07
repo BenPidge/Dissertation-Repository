@@ -191,6 +191,7 @@ def create_equipment(class_name):
     :return: a list of equipment objects
     """
     optionsData = DataExtractor.equipment_connections(Db.get_id(class_name, "Class"))
+    print(optionsData)
     equipment = []
     for option in optionsData:
         equipment += create_equipment_option(option)[1]
