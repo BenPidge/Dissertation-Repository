@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>811</width>
-    <height>710</height>
+    <height>727</height>
    </rect>
   </property>
   <property name="palette">
@@ -260,7 +260,7 @@
     <property name="geometry">
      <rect>
       <x>270</x>
-      <y>570</y>
+      <y>580</y>
       <width>261</width>
       <height>51</height>
      </rect>
@@ -676,7 +676,7 @@ border-style: outset;</string>
     <property name="geometry">
      <rect>
       <x>210</x>
-      <y>660</y>
+      <y>670</y>
       <width>401</width>
       <height>31</height>
      </rect>
@@ -696,7 +696,7 @@ font: 14pt &quot;MS Shell Dlg 2&quot;;</string>
     <property name="geometry">
      <rect>
       <x>310</x>
-      <y>630</y>
+      <y>640</y>
       <width>181</width>
       <height>31</height>
      </rect>

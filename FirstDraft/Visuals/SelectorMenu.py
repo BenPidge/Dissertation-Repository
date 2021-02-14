@@ -90,7 +90,7 @@ class SelectorMenu:
         Sets up the advanced filters button.
         """
         advFilters = QPushButton("Advanced Filters ►")
-        advFilters.setStyleSheet("font: 10pt;")
+        advFilters.setStyleSheet("font: 8pt;")
         shadow = QGraphicsDropShadowEffect()
         shadow.setBlurRadius(15)
         advFilters.setGraphicsEffect(shadow)
