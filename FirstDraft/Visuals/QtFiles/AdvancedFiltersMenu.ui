@@ -206,7 +206,7 @@ color: rgb(131, 24, 14);</string>
     <property name="geometry">
      <rect>
       <x>260</x>
-      <y>620</y>
+      <y>630</y>
       <width>271</width>
       <height>41</height>
      </rect>
@@ -490,7 +490,7 @@ border-style: outset;</string>
       <x>40</x>
       <y>460</y>
       <width>721</width>
-      <height>141</height>
+      <height>161</height>
      </rect>
     </property>
     <property name="styleSheet">
@@ -666,7 +666,7 @@ border-style: outset;</string>
     <property name="geometry">
      <rect>
       <x>620</x>
-      <y>500</y>
+      <y>510</y>
       <width>47</width>
       <height>21</height>
      </rect>
@@ -679,7 +679,7 @@ border-style: outset;</string>
     <property name="geometry">
      <rect>
       <x>670</x>
-      <y>500</y>
+      <y>510</y>
       <width>42</width>
       <height>22</height>
      </rect>
@@ -695,9 +695,9 @@ border-style: outset;</string>
     <property name="geometry">
      <rect>
       <x>590</x>
-      <y>530</y>
+      <y>540</y>
       <width>161</width>
-      <height>61</height>
+      <height>71</height>
      </rect>
     </property>
     <property name="styleSheet">
@@ -712,7 +712,7 @@ border-style: outset;</string>
        <x>0</x>
        <y>0</y>
        <width>159</width>
-       <height>59</height>
+       <height>69</height>
       </rect>
      </property>
     </widget>
@@ -723,7 +723,7 @@ border-style: outset;</string>
       <x>399</x>
       <y>500</y>
       <width>161</width>
-      <height>91</height>
+      <height>111</height>
      </rect>
     </property>
     <property name="styleSheet">

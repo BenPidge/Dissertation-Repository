@@ -1,6 +1,8 @@
 import sqlite3 as sql
+import os
 
-connection = sql.connect("/Database/Resources/ChrDatabase.db")
+dir_path = os.path.dirname(os.path.realpath(__file__))
+connection = sql.connect(dir_path + "/Resources/ChrDatabase.db")
 cursor = connection.cursor()
 
 

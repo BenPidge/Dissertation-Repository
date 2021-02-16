@@ -1,8 +1,8 @@
 import itertools
 from functools import partial
 from PyQt5 import uic
-from PyQt5.QtGui import QRegion
 from PyQt5.QtWidgets import *
+
 from Database import CoreDatabase as Db
 
 
@@ -46,6 +46,7 @@ class AdvancedFiltersMenu:
         self.setup_core_stats()
         self.setup_spell_and_equipment()
         self.setup_language_options(1)
+        self.setup_tools()
 
         btn = self.centre.findChild(QPushButton, "saveAdvancedOptions")
         btn.clicked.connect(partial(self.save_btn_clicked))
@@ -213,6 +214,55 @@ class AdvancedFiltersMenu:
             nextBox.addItems(["Necessary Language"] + languages)
             nextBox.textActivated.connect(partial(self.setup_language_selection_options, holder))
             holder.addWidget(nextBox)
+
+    def setup_tools(self):
+        stack = self.centre.findChild(QStackedWidget, "toolsStack")
+        artisans, instruments, misc = uic.loadUi("Visuals/QtFiles/ToolSubmenu.ui"), \
+                                      uic.loadUi("Visuals/QtFiles/ToolSubmenu.ui"), \
+                                      uic.loadUi("Visuals/QtFiles/ToolSubmenu.ui")
+        calls = ["Artisan's tools", "Instrument"]
+
+        index = 0
+        Db.cursor.execute("SELECT proficiencyType FROM Proficiency")
+        print(set(Db.cursor.fetchall()))
+        for page in [artisans, instruments, misc]:
+            scroller = page.findChild(QScrollArea, "scrollArea")\
+                .findChild(QWidget, "scrollAreaWidgetContents")
+            scroller.setLayout(QVBoxLayout())
+            holder = scroller.children()[0]
+            comboBox = page.findChild(QComboBox, "comboBox")
+            comboBox.setCurrentIndex(index)
+            comboBox.currentIndexChanged.connect(self.swap_tools_page)
+
+            if index != 2:
+                # Db.cursor.execute("SELECT genericTagId FROM GenericTag WHERE genericTagName='" + calls[index] + "'")
+                Db.cursor.execute(f"SELECT equipmentName FROM Equipment WHERE equipmentId IN ("
+                                  f"SELECT equipmentId FROM EquipmentTag WHERE genericTagId="
+                                  f"{Db.get_id(calls[index], 'GenericTag')})")
+            else:
+                Db.cursor.execute(f"SELECT proficiencyName FROM Proficiency WHERE proficiencyType IN ('Tool', "
+                                  f"'Vehicle', 'Gaming Set') AND proficiencyName NOT IN ("
+                                  f"SELECT equipmentName FROM Equipment WHERE equipmentId IN ("
+                                  f"SELECT equipmentId FROM EquipmentTag WHERE genericTagId="
+                                  f"{Db.get_id('Instrument', 'GenericTag')}))")
+                # tags = "', '".join(calls)
+                # Db.cursor.execute(f"SELECT equipmentName FROM Equipment WHERE equipmentId NOT IN ("
+                #                   f"SELECT equipmentId FROM EquipmentTag WHERE genericTagId IN ("
+                #                   f"SELECT genericTagId FROM GenericTag WHERE genericTagName IN ('{tags}')))")
+            for option in list(itertools.chain(*Db.cursor.fetchall())):
+                holder.addWidget(QCheckBox(option))
+            holder.addWidget(QLabel("End of Results"))
+
+            index += 1
+
+        stack.addWidget(artisans)
+        stack.addWidget(instruments)
+        stack.addWidget(misc)
+        stack.setCurrentIndex(2)
+
+    def swap_tools_page(self, index):
+        stack = self.centre.findChild(QStackedWidget, "toolsStack")
+        stack.setCurrentIndex(index+2)
 
     @staticmethod
     def setup_language_selection_options(holder):

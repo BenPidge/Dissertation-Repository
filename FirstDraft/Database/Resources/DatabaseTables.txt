@@ -463,7 +463,6 @@ CREATE TABLE IF NOT EXISTS `BackgroundLanguage` (
 CREATE TABLE IF NOT EXISTS `Equipment` (
   `equipmentId` INT UNSIGNED NOT NULL,
   `equipmentName` VARCHAR(45) NOT NULL,
-  `tags` VARCHAR(45) NOT NULL,
   `description` MEDIUMTEXT NULL,
   `diceSides` INT UNSIGNED NULL,
   `diceNum` INT UNSIGNED NULL,
@@ -623,7 +622,7 @@ CREATE TABLE IF NOT EXISTS `ArchTagConn` (
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `SpellTag` (
   `genericTagId` INT UNSIGNED NOT NULL,
-  `equipmentId` INT UNSIGNED NOT NULL,
+  `spellId` INT UNSIGNED NOT NULL,
   PRIMARY KEY (`genericTagId`, `spellId`),
   CONSTRAINT `genericTagId`
     FOREIGN KEY (`genericTagId`)
