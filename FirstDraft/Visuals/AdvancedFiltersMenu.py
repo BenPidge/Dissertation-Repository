@@ -17,7 +17,7 @@ class AdvancedFiltersMenu:
         """
         Sets up the advanced filters menu visuals.
         """
-        Form, Window = uic.loadUiType("Visuals/AdvancedFiltersMenu.ui")
+        Form, Window = uic.loadUiType("Visuals/QtFiles/AdvancedFiltersMenu.ui")
         self.window = Window()
         self.form = Form()
         self.form.setupUi(self.window)
@@ -30,21 +30,27 @@ class AdvancedFiltersMenu:
         :type controller: VisualsController
         """
         self.controller = controller
+        # if it's first being opened
         if self.centre.findChild(QScrollArea, "chosenEquipmentOptions")\
                 .findChild(QWidget, "chosenEquipmentContents").layout() is None:
             self.centre.findChild(QScrollArea, "chosenEquipmentOptions")\
                 .findChild(QWidget, "chosenEquipmentContents").setLayout(QVBoxLayout())
             self.centre.findChild(QScrollArea, "chosenSpellOptions") \
                 .findChild(QWidget, "chosenSpellContents").setLayout(QVBoxLayout())
+            self.centre.findChild(QScrollArea, "languagesScroller")\
+                .findChild(QWidget, "scrollAreaWidgetContents").setLayout(QVBoxLayout())
 
         shadowItems = {"coreStatsView": QGraphicsView, "spellsView": QGraphicsView, "equipmentView": QGraphicsView,
                        "proficienciesView": QGraphicsView, "saveAdvancedOptions": QPushButton}
         self.centre = self.controller.setup_shadows(self.centre, shadowItems)
         self.setup_core_stats()
         self.setup_spell_and_equipment()
+        self.setup_language_options(1)
 
         btn = self.centre.findChild(QPushButton, "saveAdvancedOptions")
         btn.clicked.connect(partial(self.save_btn_clicked))
+        languageAmnt = self.centre.findChild(QSpinBox, "langAmntSpinner")
+        languageAmnt.valueChanged.connect(self.setup_language_options)
 
         self.window.show()
 
@@ -193,4 +199,45 @@ class AdvancedFiltersMenu:
         :param amnt: the amount of languages
         :type amnt: int
         """
-        holder = self.centre.findChild(QScrollArea, "languagesScroller").findChild(QWidget, "scrollAreaWidgetContents")
+        holder = self.centre.findChild(QScrollArea, "languagesScroller")\
+            .findChild(QWidget, "scrollAreaWidgetContents").children()[0]
+        Db.cursor.execute("SELECT languageName FROM Language")
+        languages = list(itertools.chain(*Db.cursor.fetchall()))
+
+        for i in reversed(range(holder.count())):
+            text = holder.itemAt(i).widget().currentText()
+            if text in languages:
+                languages.remove(text)
+        for x in range(amnt - holder.count()):
+            nextBox = QComboBox()
+            nextBox.addItems(["Necessary Language"] + languages)
+            nextBox.textActivated.connect(partial(self.setup_language_selection_options, holder))
+            holder.addWidget(nextBox)
+
+    @staticmethod
+    def setup_language_selection_options(holder):
+        """
+        Sets up the options available within all combo boxes for languages, based on what's already selected.
+        :param holder: the holder that contains all combo boxes
+        :type holder: QScrollArea
+        """
+        Db.cursor.execute("SELECT languageName FROM Language")
+        languages = list(itertools.chain(*Db.cursor.fetchall()))
+        for i in reversed(range(holder.count())):
+            text = holder.itemAt(i).widget().currentText()
+            if text in languages:
+                languages.remove(text)
+
+        languages.sort()
+        for i in range(holder.count()):
+            # gets the current selection, and adds necessary language to languages
+            # if the current selection is a language
+            comboBox = holder.itemAt(i).widget()
+            text = comboBox.currentText()
+            if text != "Necessary Language":
+                languages = ["Necessary Language"] + languages
+
+            # recreates the combobox contents with the same item selected
+            comboBox.clear()
+            comboBox.addItem(text)
+            comboBox.addItems(languages)

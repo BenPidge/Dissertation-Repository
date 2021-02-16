@@ -289,7 +289,7 @@ border-style: outset;</string>
      <string/>
     </property>
     <property name="pixmap">
-     <pixmap>Logo.png</pixmap>
+     <pixmap>../Images/Logo.png</pixmap>
     </property>
     <property name="scaledContents">
      <bool>true</bool>
@@ -641,7 +641,7 @@ border-style: outset;</string>
      <enum>Qt::RichText</enum>
     </property>
     <property name="pixmap">
-     <pixmap>OptionalText.png</pixmap>
+     <pixmap>../Images/OptionalText.png</pixmap>
     </property>
     <property name="scaledContents">
      <bool>true</bool>

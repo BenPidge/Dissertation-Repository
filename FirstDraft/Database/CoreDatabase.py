@@ -1,6 +1,6 @@
 import sqlite3 as sql
 
-connection = sql.connect("G:/Dissertation Code/FirstDraft/Database/ChrDatabase.db")
+connection = sql.connect("/Database/Resources/ChrDatabase.db")
 cursor = connection.cursor()
 
 

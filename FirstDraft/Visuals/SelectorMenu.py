@@ -18,7 +18,7 @@ class SelectorMenu:
         """
         Sets up the selector menu visuals.
         """
-        Form, Window = uic.loadUiType("Visuals/SelectorMenu.ui")
+        Form, Window = uic.loadUiType("Visuals/QtFiles/SelectorMenu.ui")
         self.window = Window()
         self.form = Form()
         self.form.setupUi(self.window)

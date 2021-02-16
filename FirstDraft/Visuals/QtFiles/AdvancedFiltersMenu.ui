@@ -206,7 +206,7 @@ color: rgb(131, 24, 14);</string>
     <property name="geometry">
      <rect>
       <x>260</x>
-      <y>610</y>
+      <y>620</y>
       <width>271</width>
       <height>41</height>
      </rect>
@@ -391,7 +391,7 @@ border-style: outset;</string>
     </property>
     <property name="icon">
      <iconset>
-      <normaloff>SearchImage.png</normaloff>SearchImage.png</iconset>
+      <normaloff>../Images/SearchImage.png</normaloff>../Images/SearchImage.png</iconset>
     </property>
     <property name="iconSize">
      <size>
@@ -475,7 +475,7 @@ border-style: outset;</string>
     </property>
     <property name="icon">
      <iconset>
-      <normaloff>SearchImage.png</normaloff>SearchImage.png</iconset>
+      <normaloff>../Images/SearchImage.png</normaloff>../Images/SearchImage.png</iconset>
     </property>
     <property name="iconSize">
      <size>
@@ -490,7 +490,7 @@ border-style: outset;</string>
       <x>40</x>
       <y>460</y>
       <width>721</width>
-      <height>131</height>
+      <height>141</height>
      </rect>
     </property>
     <property name="styleSheet">
@@ -577,7 +577,7 @@ border-style: outset;</string>
     <property name="geometry">
      <rect>
       <x>50</x>
-      <y>500</y>
+      <y>510</y>
       <width>82</width>
       <height>17</height>
      </rect>
@@ -590,7 +590,7 @@ border-style: outset;</string>
     <property name="geometry">
      <rect>
       <x>50</x>
-      <y>520</y>
+      <y>530</y>
       <width>91</width>
       <height>17</height>
      </rect>
@@ -603,7 +603,7 @@ border-style: outset;</string>
     <property name="geometry">
      <rect>
       <x>50</x>
-      <y>540</y>
+      <y>550</y>
       <width>82</width>
       <height>17</height>
      </rect>
@@ -616,7 +616,7 @@ border-style: outset;</string>
     <property name="geometry">
      <rect>
       <x>50</x>
-      <y>560</y>
+      <y>570</y>
       <width>82</width>
       <height>17</height>
      </rect>
@@ -629,7 +629,7 @@ border-style: outset;</string>
     <property name="geometry">
      <rect>
       <x>141</x>
-      <y>520</y>
+      <y>530</y>
       <width>31</width>
       <height>22</height>
      </rect>
@@ -648,7 +648,7 @@ border-style: outset;</string>
     <property name="geometry">
      <rect>
       <x>140</x>
-      <y>500</y>
+      <y>510</y>
       <width>41</width>
       <height>20</height>
      </rect>
@@ -697,7 +697,7 @@ border-style: outset;</string>
       <x>590</x>
       <y>530</y>
       <width>161</width>
-      <height>51</height>
+      <height>61</height>
      </rect>
     </property>
     <property name="styleSheet">
@@ -712,24 +712,9 @@ border-style: outset;</string>
        <x>0</x>
        <y>0</y>
        <width>159</width>
-       <height>49</height>
+       <height>59</height>
       </rect>
      </property>
-     <widget class="QComboBox" name="comboBox">
-      <property name="geometry">
-       <rect>
-        <x>10</x>
-        <y>0</y>
-        <width>141</width>
-        <height>22</height>
-       </rect>
-      </property>
-      <item>
-       <property name="text">
-        <string>Necessary Language</string>
-       </property>
-      </item>
-     </widget>
     </widget>
    </widget>
    <widget class="QStackedWidget" name="toolsStack">
@@ -738,7 +723,7 @@ border-style: outset;</string>
       <x>399</x>
       <y>500</y>
       <width>161</width>
-      <height>80</height>
+      <height>91</height>
      </rect>
     </property>
     <property name="styleSheet">
@@ -754,7 +739,7 @@ border-style: outset;</string>
     <property name="geometry">
      <rect>
       <x>220</x>
-      <y>500</y>
+      <y>510</y>
       <width>101</width>
       <height>17</height>
      </rect>
@@ -767,7 +752,7 @@ border-style: outset;</string>
     <property name="geometry">
      <rect>
       <x>220</x>
-      <y>520</y>
+      <y>530</y>
       <width>101</width>
       <height>17</height>
      </rect>
@@ -780,7 +765,7 @@ border-style: outset;</string>
     <property name="geometry">
      <rect>
       <x>220</x>
-      <y>540</y>
+      <y>550</y>
       <width>141</width>
       <height>17</height>
      </rect>
