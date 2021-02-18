@@ -205,6 +205,9 @@ class AdvancedFiltersMenu:
         Db.cursor.execute("SELECT languageName FROM Language")
         languages = list(itertools.chain(*Db.cursor.fetchall()))
 
+        for x in range(holder.count() - amnt):
+            holder.itemAt(x).widget().setParent(None)
+
         for i in reversed(range(holder.count())):
             text = holder.itemAt(i).widget().currentText()
             if text in languages:
@@ -216,6 +219,9 @@ class AdvancedFiltersMenu:
             holder.addWidget(nextBox)
 
     def setup_tools(self):
+        """
+        Sets up the screens that procedurally show the available tools as check boxes.
+        """
         stack = self.centre.findChild(QStackedWidget, "toolsStack")
         artisans, instruments, misc = uic.loadUi("Visuals/QtFiles/ToolSubmenu.ui"), \
                                       uic.loadUi("Visuals/QtFiles/ToolSubmenu.ui"), \
@@ -224,7 +230,6 @@ class AdvancedFiltersMenu:
 
         index = 0
         Db.cursor.execute("SELECT proficiencyType FROM Proficiency")
-        print(set(Db.cursor.fetchall()))
         for page in [artisans, instruments, misc]:
             scroller = page.findChild(QScrollArea, "scrollArea")\
                 .findChild(QWidget, "scrollAreaWidgetContents")
@@ -235,7 +240,6 @@ class AdvancedFiltersMenu:
             comboBox.currentIndexChanged.connect(self.swap_tools_page)
 
             if index != 2:
-                # Db.cursor.execute("SELECT genericTagId FROM GenericTag WHERE genericTagName='" + calls[index] + "'")
                 Db.cursor.execute(f"SELECT equipmentName FROM Equipment WHERE equipmentId IN ("
                                   f"SELECT equipmentId FROM EquipmentTag WHERE genericTagId="
                                   f"{Db.get_id(calls[index], 'GenericTag')})")
@@ -245,14 +249,10 @@ class AdvancedFiltersMenu:
                                   f"SELECT equipmentName FROM Equipment WHERE equipmentId IN ("
                                   f"SELECT equipmentId FROM EquipmentTag WHERE genericTagId="
                                   f"{Db.get_id('Instrument', 'GenericTag')}))")
-                # tags = "', '".join(calls)
-                # Db.cursor.execute(f"SELECT equipmentName FROM Equipment WHERE equipmentId NOT IN ("
-                #                   f"SELECT equipmentId FROM EquipmentTag WHERE genericTagId IN ("
-                #                   f"SELECT genericTagId FROM GenericTag WHERE genericTagName IN ('{tags}')))")
+
             for option in list(itertools.chain(*Db.cursor.fetchall())):
                 holder.addWidget(QCheckBox(option))
             holder.addWidget(QLabel("End of Results"))
-
             index += 1
 
         stack.addWidget(artisans)
@@ -261,6 +261,11 @@ class AdvancedFiltersMenu:
         stack.setCurrentIndex(2)
 
     def swap_tools_page(self, index):
+        """
+        Swaps the tools page to the inputted page.
+        :param index: the index of the page combobox selected. This index is 2 below the related page's
+        :type index: int
+        """
         stack = self.centre.findChild(QStackedWidget, "toolsStack")
         stack.setCurrentIndex(index+2)
 
