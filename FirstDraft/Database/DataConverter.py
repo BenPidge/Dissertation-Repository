@@ -1,8 +1,8 @@
-import CharacterElements.Magic
-from Database import DataExtractor, CoreDatabase as Db
-from CharacterElements import Character, Class, Equipment, Race, Spell
 import itertools
 
+import CharacterElements.Magic
+from CharacterElements import Character, Class, Equipment, Race, Spell
+from Database import DataExtractor, CoreDatabase as Db
 
 
 def create_character(chr_lvl):
@@ -33,7 +33,7 @@ def create_character(chr_lvl):
     Db.cursor.execute(f"SELECT subclassName FROM Subclass WHERE classId={Db.get_id(chrClass, 'Class')}")
     subclasses = list(itertools.chain(*Db.cursor.fetchall()))
     if len(subclasses) > 0:
-        chrClass = create_class(chrClass, chr_lvl, make_choice(1, subclasses)[0])
+        chrClass = create_class(chrClass, chr_lvl, create_subclass(make_choice(1, subclasses)[0], chr_lvl))
     else:
         chrClass = create_class(chrClass, chr_lvl)
 
@@ -191,7 +191,6 @@ def create_equipment(class_name):
     :return: a list of equipment objects
     """
     optionsData = DataExtractor.equipment_connections(Db.get_id(class_name, "Class"))
-    print(optionsData)
     equipment = []
     for option in optionsData:
         equipment += create_equipment_option(option)[1]
@@ -220,6 +219,7 @@ def create_ability_scores(priorities):
             if abilityScores[keyList[counter]] < 15:
                 abilityScores[keyList[counter]] = 15
                 incomplete = False
+            counter += 1
 
     return abilityScores
 
@@ -278,7 +278,7 @@ def make_choice(num_of_choices, choices):
         if type(output[x]) is not str:
             allStr = False
 
-    if not(len(output) == 1 and type(output[0]) is not list) and allStr is False:
+    if not(len(output) == 1 and type(output[0]) is not list) and allStr is False and type(output[0]) is not tuple:
         output = list(itertools.chain(*output))
     return output
 
@@ -433,9 +433,9 @@ def choose_trait_option(traits):
     :return: the updated list of traits
     """
     choices = []
+
     for x in range(0, len(traits)):
-        Db.cursor.execute(f"SELECT optionDesc FROM TraitOption "
-                          f"WHERE traitId={Db.get_id(traits[x][0], 'Trait')}")
+        Db.cursor.execute(f"SELECT optionDesc FROM TraitOption WHERE traitId={Db.get_id(traits[x][0], 'Trait')}")
         options = Db.cursor.fetchall()
         if len(options) > 0:
             for option in options:

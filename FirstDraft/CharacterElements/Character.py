@@ -1,8 +1,6 @@
 import itertools
+import math
 
-import CharacterElements.Race
-import CharacterElements.Class
-import CharacterElements.Spell
 from CharacterElements import Equipment, Magic
 
 
@@ -104,10 +102,30 @@ class Character:
         else:
             abilities = (self.chrClass.secondAbility, self.race.spellMod)
 
-        return Magic.Magic(self.chrClass.magic.spellSlot, self.chrClass.magic.areSpellsPrepared,
-                           self.chrClass.magic.spellAmount, self.chrClass.magic.knownSpells,
-                           self.chrClass.magic.preparedSpellCalculation, self.chrClass.magic.preparedSpellOptions,
-                           abilities, raceSpells)
+        magic = self.chrClass.magic
+        if magic is not None:
+            elements = [magic.spellSlot, magic.areSpellsPrepared,
+                        magic.spellAmount, magic.knownSpells,
+                        magic.preparedSpellCalculation, magic.preparedSpellOptions]
+
+        else:
+            elements = [{1: 0}, False, 0, [], "ALL", []]
+
+        newMagic = Magic.Magic(elements[0], elements[1], elements[2], elements[3], elements[4], elements[5],
+                               abilities, raceSpells)
+        if magic.areSpellsPrepared:
+            newMagic.preparedSpellAmnt = self.ability_mod(magic.preparedSpellCalculation[:3]) + self.chrClass.level
+
+        return newMagic
+
+    def ability_mod(self, ability_score):
+        """
+        Calculates the ability modifier value, given an ability score name.
+        :param ability_score: the name of the ability score to convert
+        :type ability_score: str
+        :return: the ability modifier value
+        """
+        return math.floor(self.abilityScores[ability_score] / 2) - 5
 
     def __str__(self):
         """

@@ -1,5 +1,5 @@
-import sqlite3 as sql
 import os
+import sqlite3 as sql
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 connection = sql.connect(dir_path + "/Resources/ChrDatabase.db")

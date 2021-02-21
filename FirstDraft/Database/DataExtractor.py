@@ -1,7 +1,5 @@
-from Database import CoreDatabase as Db, DataConverter
 from CharacterElements import Equipment
-import re
-
+from Database import CoreDatabase as Db
 
 # Represents the table(s) accessible from the input table using an intermediary table
 # This excludes equipment due to the intermediary table holding extra information

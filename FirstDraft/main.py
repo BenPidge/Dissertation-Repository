@@ -9,6 +9,7 @@ visuals = VisualsController.VisualsController()
 def testing():
     character = DataConverter.create_character(1)
     chromosome = Chromosome.Chromosome(character, [["Dexterous", 0.4], ["Heavy Weapons", 0.6], ["Ranged", 0.4]], 0.5, 0.5)
+    print(chromosome)
 
 
 def begin():

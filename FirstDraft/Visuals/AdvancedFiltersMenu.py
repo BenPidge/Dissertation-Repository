@@ -1,5 +1,6 @@
 import itertools
 from functools import partial
+
 from PyQt5 import uic
 from PyQt5.QtWidgets import *
 
@@ -122,7 +123,7 @@ class AdvancedFiltersMenu:
 
         vbox = QVBoxLayout()
         for element in set(itertools.chain(*Db.cursor.fetchall())).difference(selectedItems):
-            btn = QPushButton(element)
+            btn = QPushButton("+ " + element)
             btn.setStyleSheet("background-color: rgb(23, 134, 3); color: rgb(255, 255, 255); "
                               "font: 87 8pt 'Arial Black'; Text-align:left;")
             btn.clicked.connect(partial(self.selected_item, scroll_type=scroll_type, name=element))
@@ -150,11 +151,11 @@ class AdvancedFiltersMenu:
         if name != "":
             selectedItems.add(name)
             self.populate_scroll_area(scroll_type)
-            btn = QPushButton(name)
+            btn = QPushButton("- " + name)
             btn.setStyleSheet("background-color: rgb(23, 134, 3); color: rgb(255, 255, 255); "
                               "font: 87 8pt 'Arial Black'; Text-align:left;")
             vbox.addWidget(btn)
-            btn.clicked.connect(lambda: self.deselected_item(scroll_type=scroll_type, name=btn.text()))
+            btn.clicked.connect(lambda: self.deselected_item(scroll_type=scroll_type, name=btn.text()[2:]))
 
         options.verticalScrollBar().setValue(0)
         if scroll_type == "spell":
@@ -182,10 +183,10 @@ class AdvancedFiltersMenu:
         for i in reversed(range(vbox.count())):
             vbox.itemAt(i).widget().setParent(None)
         for element in selectedItems.difference(set(name)):
-            btn = QPushButton(element)
+            btn = QPushButton("+ " +element)
             btn.setStyleSheet("background-color: rgb(23, 134, 3); color: rgb(255, 255, 255); "
                               "font: 87 8pt 'Arial Black'; Text-align:left;")
-            btn.clicked.connect(lambda: self.deselected_item(scroll_type=scroll_type, name=btn.text()))
+            btn.clicked.connect(lambda: self.deselected_item(scroll_type=scroll_type, name=btn.text()[2:]))
             vbox.addWidget(btn)
 
         self.populate_scroll_area(scroll_type)
@@ -204,9 +205,7 @@ class AdvancedFiltersMenu:
             .findChild(QWidget, "scrollAreaWidgetContents").children()[0]
         Db.cursor.execute("SELECT languageName FROM Language")
         languages = list(itertools.chain(*Db.cursor.fetchall()))
-
-        for x in range(holder.count() - amnt):
-            holder.itemAt(x).widget().setParent(None)
+        languages.sort()
 
         for i in reversed(range(holder.count())):
             text = holder.itemAt(i).widget().currentText()
@@ -251,6 +250,8 @@ class AdvancedFiltersMenu:
                                   f"{Db.get_id('Instrument', 'GenericTag')}))")
 
             for option in list(itertools.chain(*Db.cursor.fetchall())):
+                if index == 2:
+                    print(option)
                 holder.addWidget(QCheckBox(option))
             holder.addWidget(QLabel("End of Results"))
             index += 1

@@ -1,5 +1,9 @@
+
 class Magic:
     """A class representing all details of magic that a character class might require."""
+
+    preparedSpellAmnt = 0
+
     def __init__(self, spell_slot, are_spells_prepared, spell_amount=-1, known_spells=None,
                  prepared_spell_calculation=None, prepared_spell_options=None,
                  casting_abilities=None, known_secondary_spells=None):
@@ -44,7 +48,6 @@ class Magic:
             else:
                 self.spellcasting.update({casting_abilities[0]: known_spells,
                                           casting_abilities[1]: known_secondary_spells})
-
 
     def __str__(self):
         """

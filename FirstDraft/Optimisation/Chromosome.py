@@ -1,7 +1,7 @@
 import itertools
+import math
 from collections import Counter
 
-from CharacterElements import Character
 from Database import CoreDatabase as Db, DataExtractor
 
 
@@ -36,18 +36,26 @@ class Chromosome:
 
     fitness = 0
     nondominatedFront = 0
+    generic_tags = dict()
 
     def __init__(self, character, tags, magic_weight, health_weight):
         """
         Initialises the chromosome with a provided character object and tags.
         :param character: the character the chromosome will represent
-        :type character: Character.Character
+        :type character: class: `Character.Character`
         :param tags: the tags that it's sorting will judge it off, in a [tag, weight] layout
         :type tags: list
         """
         self.character = character
-        self.health = [health_weight, (character.chrClass.hitDice - 6)/2]
+        self.health = [health_weight, (character.chrClass.hitDice - 6)/2 + character.ability_mod("CON")]
+
+        # calculates the magic weighting
         self.magic = [magic_weight, self.spellslots_value()]
+        divisor = character.magic.preparedSpellAmnt
+        if divisor != 0:
+            self.magic[1] += len(character.magic.preparedSpellOptions)/divisor
+        for (ability, spells) in character.magic.spellcasting.items():
+            self.magic[1] += len(spells)
 
         # tags is a 2D array with nested array layouts of [tag, tags' weighting, tags' unweighted individual fitness]
         self.tags = []
@@ -66,18 +74,14 @@ class Chromosome:
         """
         # flatten tagsFitness to get the tags' array index from the name
         index = int(list(itertools.chain(*self.tags)).index(tag) / 3)
-        self.tags[index][2] += addition
+        self.tags[index][2] = round(self.tags[index][2] + addition * self.tags[index][1], 2)
 
     def extract_tags(self):
         """
         Extracts the needed information from each tag.
         """
         self.ability_scores_tag()
-        print(self.tags)
-        print("\n\n")
-        results = self.pull_generic_tags()
-        print(results)
-        print("\n\n")
+        self.generic_tags = self.pull_generic_tags()
         for (tag, weight, fitness) in self.tags:
             self.update_indiv_tag_fitness(tag, self.get_tag_fitness(tag))
         print(self.tags)
@@ -93,6 +97,10 @@ class Chromosome:
         fitness = 0
         tagId = Db.get_id(tag, "Tag")
         fitness += self.proficiencies_total(tagId)
+        Db.cursor.execute(f"SELECT genericTagName FROM GenericTag WHERE genericTagId IN "
+                          f"(SELECT genericTagId FROM ArchTagConn WHERE tagId={Db.get_id(tag, 'Tag')})")
+        for genericTag in list(itertools.chain(*Db.cursor.fetchall())):
+            fitness += self.generic_tags[genericTag]
 
         return fitness
 
@@ -148,7 +156,7 @@ class Chromosome:
         for tag in list(set([x.lower() for x in potentialTags])
                         .intersection(set([x[0].lower() for x in self.tags]))):
             value = list(self.character.abilityScores.values())[potentialTags.index(tag)]
-            self.update_indiv_tag_fitness(tag.title(), value)
+            self.update_indiv_tag_fitness(tag.title(), math.floor(value/2)-5)
 
     def pull_generic_tags(self):
         """
@@ -182,3 +190,17 @@ class Chromosome:
         archetypeWeightDict = pull_generic_tag("Trait", traits, weights[2], archetypeTags, archetypeWeightDict)
 
         return archetypeWeightDict
+
+    def __str__(self):
+        """
+        Converts the chromosome into a string stating it's data.
+        :return: the string of it's data
+        """
+        output = "This chromosome represents a " + self.character.race.name + " " + self.character.chrClass.name \
+                 + " aiming to optimise for the current tags:\n"
+        for tag in self.tags:
+            output += str(tag[0]) + " with a weighting of " + str(tag[1]) \
+                      + " and a fitness calculated as " + str(tag[2]) + "\n"
+        output += "\nA health weighting of " + str(self.health[0]) + " with a fitness of " + str(self.health[1]) \
+                  + " and a magic weighting of " + str(self.magic[0]) + " with a fitness of " + str(self.magic[1])
+        return output

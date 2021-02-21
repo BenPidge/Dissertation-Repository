@@ -10,7 +10,7 @@ def setup_tables():
     count = 0
     nextCommand = ""
 
-    with open("Database/DatabaseTables.txt") as file:
+    with open("Database/Resources/DatabaseTables.txt") as file:
         while True:
             count += 1
             line = file.readline()
