@@ -56,11 +56,54 @@ class AdvancedFiltersMenu:
 
         self.window.show()
 
-    def save_btn_clicked(self):
+    def get_filters(self):
         """
-        Reacts to the save advanced options button being placed, by calling the controller.
+        Combines all filters into a dictionary and returns them.
+        :return: a dictionary of filters
         """
-        self.controller.stop_advanced_filters_menu()
+        filters = {"Spells": [], "Equipment": [], "Proficiencies": [], "Languages": []}
+
+        # Core Stats
+        stats = ["Class", "Subclass", "Race", "Subrace", "Background"]
+        for stat in stats:
+            text = self.centre.findChild(QComboBox, "select" + stat).currentText()
+            if text != "Select " + stat:
+                filters.update({stat: text})
+
+        # Proficiencies
+        for child in self.centre.findChildren(QCheckBox):
+            if child.isChecked():
+                filters["Proficiencies"].append(child.text())
+        matchEquip = self.centre.findChild(QRadioButton, "weaponsMatchEquipmentBtn").isChecked()
+        filters.update({"Minimum AC": self.centre.findChild(QSpinBox, "minACSpinner").value()})
+
+        # Languages
+        for dropdown in self.centre.findChild(QScrollArea, "languagesScroller")\
+                .findChild(QWidget, "scrollAreaWidgetContents").children()[1:]:
+            text = dropdown.currentText()
+            if text != "Necessary Language":
+                filters["Languages"].append(text)
+
+
+        # Spells & Equipment
+        elements = [["Spell", "Spells"], ["Equipment", "Equipment"]]
+        for [singular, plural] in elements:
+            vbox = self.centre.findChild(QScrollArea, "chosen" + singular + "Options")\
+                .findChild(QWidget, "chosen" + singular + "Contents").children()[0]
+            for x in range(vbox.count()):
+                text = vbox.itemAt(x).widget().text()[2:]
+                filters[plural].append(text)
+
+                # if they've asked for proficiency in all equipment, and the current item is a weapon, add it
+                if plural == "Equipment" and matchEquip:
+                    Db.cursor.execute("SELECT COUNT(*) FROM Proficiency WHERE proficiencyName='"
+                                      + text.replace("'", "''").title() + "' AND proficiencyType='Weapon'")
+                    if Db.cursor.fetchone()[0] > 0:
+                        filters["Proficiencies"].append(text)
+
+        return filters
+
+
 
     def setup_core_stats(self):
         """
@@ -105,16 +148,99 @@ class AdvancedFiltersMenu:
         spellBtn.clicked.connect(partial(self.populate_scroll_area, scroll_type="spell"))
         equipmentBtn.clicked.connect(partial(self.populate_scroll_area, scroll_type="equipment"))
 
+    def setup_language_options(self, amnt):
+        """
+        Sets up dropdown boxes equal to the amount of languages specified.
+        :param amnt: the amount of languages
+        :type amnt: int
+        """
+        holder = self.centre.findChild(QScrollArea, "languagesScroller")\
+            .findChild(QWidget, "scrollAreaWidgetContents").children()[0]
+        Db.cursor.execute("SELECT languageName FROM Language")
+        languages = list(itertools.chain(*Db.cursor.fetchall()))
+        languages.sort()
+
+        for i in reversed(range(holder.count())):
+            text = holder.itemAt(i).widget().currentText()
+            if text in languages:
+                languages.remove(text)
+        for x in range(amnt - holder.count()):
+            nextBox = QComboBox()
+            nextBox.addItems(["Necessary Language"] + languages)
+            nextBox.textActivated.connect(partial(self.setup_language_selection_options, holder))
+            holder.addWidget(nextBox)
+
+    def setup_tools(self):
+        """
+        Sets up the screens that procedurally show the available tools as check boxes.
+        """
+        stack = self.centre.findChild(QStackedWidget, "toolsStack")
+        artisans, instruments, misc = uic.loadUi("Visuals/QtFiles/ToolSubmenu.ui"), \
+                                      uic.loadUi("Visuals/QtFiles/ToolSubmenu.ui"), \
+                                      uic.loadUi("Visuals/QtFiles/ToolSubmenu.ui")
+        calls = ["Artisan's tools", "Instrument"]
+
+        index = 0
+        Db.cursor.execute("SELECT proficiencyType FROM Proficiency")
+        for page in [artisans, instruments, misc]:
+            scroller = page.findChild(QScrollArea, "scrollArea")\
+                .findChild(QWidget, "scrollAreaWidgetContents")
+            scroller.setLayout(QVBoxLayout())
+            holder = scroller.children()[0]
+            comboBox = page.findChild(QComboBox, "comboBox")
+            comboBox.setCurrentIndex(index)
+            comboBox.currentIndexChanged.connect(self.swap_tools_page)
+
+            if index != 2:
+                Db.cursor.execute(f"SELECT equipmentName FROM Equipment WHERE equipmentId IN ("
+                                  f"SELECT equipmentId FROM EquipmentTag WHERE genericTagId="
+                                  f"{Db.get_id(calls[index], 'GenericTag')})")
+            else:
+                Db.cursor.execute(f"SELECT proficiencyName FROM Proficiency WHERE proficiencyType IN ('Tool', "
+                                  f"'Vehicle', 'Gaming Set') AND proficiencyName NOT IN ("
+                                  f"SELECT equipmentName FROM Equipment WHERE equipmentId IN ("
+                                  f"SELECT equipmentId FROM EquipmentTag WHERE genericTagId="
+                                  f"{Db.get_id('Instrument', 'GenericTag')}))")
+
+            for option in list(itertools.chain(*Db.cursor.fetchall())):
+                holder.addWidget(QCheckBox(option))
+            holder.addWidget(QLabel("End of Results"))
+            index += 1
+
+        stack.addWidget(artisans)
+        stack.addWidget(instruments)
+        stack.addWidget(misc)
+        stack.setCurrentIndex(2)
+
+
+
     def populate_scroll_area(self, scroll_type):
         """
         Populates a scroll area with the appropriate contents based on the value entered into it's search bar.
         :param scroll_type: the group the scroll area is part of - spell or equipment
         :type scroll_type: str
         """
+        elements = set()
         options = self.centre.findChild(QScrollArea, scroll_type + "Options")
         searchBar = self.centre.findChild(QTextEdit, scroll_type + "SearchBar")
+
+        # get the resulting items
         Db.cursor.execute(f"SELECT {scroll_type}Name FROM {scroll_type.capitalize()} WHERE "
                           f"{scroll_type}Name LIKE '%{searchBar.toPlainText()}%'")
+        elements.update(itertools.chain(*Db.cursor.fetchall()))
+        Db.cursor.execute(f"SELECT {scroll_type}Name FROM {scroll_type.capitalize()} WHERE {scroll_type}Id IN "
+                          f"(SELECT {scroll_type}Id FROM {scroll_type.capitalize()}Tag WHERE genericTagId IN "
+                          f"(SELECT genericTagId FROM GenericTag WHERE genericTagName="
+                          f"'{searchBar.toPlainText().capitalize()}'))")
+        elements.update(itertools.chain(*Db.cursor.fetchall()))
+
+        # if its a a spell, get more results based on further info
+        Db.cursor.execute("SELECT spellName, castingTime, duration, school, damageOrEffect FROM Spell")
+        for (name, cast, dur, school, effect) in Db.cursor.fetchall():
+            if effect[0].isdigit():
+                effect = effect.split(" ")[1]
+            if searchBar.toPlainText().lower() in [cast.lower(), dur.lower(), school.lower(), effect.lower()]:
+                elements.add(name)
 
         if scroll_type == "spell":
             selectedItems = self.selectedSpells
@@ -122,7 +248,9 @@ class AdvancedFiltersMenu:
             selectedItems = self.selectedEquipment
 
         vbox = QVBoxLayout()
-        for element in set(itertools.chain(*Db.cursor.fetchall())).difference(selectedItems):
+        elements = list(elements.difference(selectedItems))
+        elements.sort()
+        for element in elements:
             btn = QPushButton("+ " + element)
             btn.setStyleSheet("background-color: rgb(23, 134, 3); color: rgb(255, 255, 255); "
                               "font: 87 8pt 'Arial Black'; Text-align:left;")
@@ -194,72 +322,13 @@ class AdvancedFiltersMenu:
             self.selectedSpells = selectedItems
         else:
             self.selectedEquipment = selectedItems
+        options.verticalScrollBar().setValue(0)
 
-    def setup_language_options(self, amnt):
+    def save_btn_clicked(self):
         """
-        Sets up dropdown boxes equal to the amount of languages specified.
-        :param amnt: the amount of languages
-        :type amnt: int
+        Reacts to the save advanced options button being placed, by calling the controller.
         """
-        holder = self.centre.findChild(QScrollArea, "languagesScroller")\
-            .findChild(QWidget, "scrollAreaWidgetContents").children()[0]
-        Db.cursor.execute("SELECT languageName FROM Language")
-        languages = list(itertools.chain(*Db.cursor.fetchall()))
-        languages.sort()
-
-        for i in reversed(range(holder.count())):
-            text = holder.itemAt(i).widget().currentText()
-            if text in languages:
-                languages.remove(text)
-        for x in range(amnt - holder.count()):
-            nextBox = QComboBox()
-            nextBox.addItems(["Necessary Language"] + languages)
-            nextBox.textActivated.connect(partial(self.setup_language_selection_options, holder))
-            holder.addWidget(nextBox)
-
-    def setup_tools(self):
-        """
-        Sets up the screens that procedurally show the available tools as check boxes.
-        """
-        stack = self.centre.findChild(QStackedWidget, "toolsStack")
-        artisans, instruments, misc = uic.loadUi("Visuals/QtFiles/ToolSubmenu.ui"), \
-                                      uic.loadUi("Visuals/QtFiles/ToolSubmenu.ui"), \
-                                      uic.loadUi("Visuals/QtFiles/ToolSubmenu.ui")
-        calls = ["Artisan's tools", "Instrument"]
-
-        index = 0
-        Db.cursor.execute("SELECT proficiencyType FROM Proficiency")
-        for page in [artisans, instruments, misc]:
-            scroller = page.findChild(QScrollArea, "scrollArea")\
-                .findChild(QWidget, "scrollAreaWidgetContents")
-            scroller.setLayout(QVBoxLayout())
-            holder = scroller.children()[0]
-            comboBox = page.findChild(QComboBox, "comboBox")
-            comboBox.setCurrentIndex(index)
-            comboBox.currentIndexChanged.connect(self.swap_tools_page)
-
-            if index != 2:
-                Db.cursor.execute(f"SELECT equipmentName FROM Equipment WHERE equipmentId IN ("
-                                  f"SELECT equipmentId FROM EquipmentTag WHERE genericTagId="
-                                  f"{Db.get_id(calls[index], 'GenericTag')})")
-            else:
-                Db.cursor.execute(f"SELECT proficiencyName FROM Proficiency WHERE proficiencyType IN ('Tool', "
-                                  f"'Vehicle', 'Gaming Set') AND proficiencyName NOT IN ("
-                                  f"SELECT equipmentName FROM Equipment WHERE equipmentId IN ("
-                                  f"SELECT equipmentId FROM EquipmentTag WHERE genericTagId="
-                                  f"{Db.get_id('Instrument', 'GenericTag')}))")
-
-            for option in list(itertools.chain(*Db.cursor.fetchall())):
-                if index == 2:
-                    print(option)
-                holder.addWidget(QCheckBox(option))
-            holder.addWidget(QLabel("End of Results"))
-            index += 1
-
-        stack.addWidget(artisans)
-        stack.addWidget(instruments)
-        stack.addWidget(misc)
-        stack.setCurrentIndex(2)
+        self.controller.stop_advanced_filters_menu()
 
     def swap_tools_page(self, index):
         """
@@ -269,6 +338,8 @@ class AdvancedFiltersMenu:
         """
         stack = self.centre.findChild(QStackedWidget, "toolsStack")
         stack.setCurrentIndex(index+2)
+
+
 
     @staticmethod
     def setup_language_selection_options(holder):

@@ -50,6 +50,33 @@ class SelectorMenu:
 
         self.window.show()
 
+    def get_filters(self):
+        """
+        Combines all filters into a dictionary and returns them.
+        :return: a dictionary of filters
+        """
+        filters = {"Abilities": dict(), "Skills": []}
+
+        # Archetypes
+        archetypes = ["Primary", "Secondary"]
+        for arch in archetypes:
+            text = self.centre.findChild(QComboBox, arch.lower() + "Archetypes").currentText()
+            if text != arch + " Archetype":
+                filters.update({arch: text})
+
+        # Skills
+        for box in self.skillCheckBoxes:
+            if box.isChecked():
+                filters["Skills"].append(box.text())
+
+        # Abilities
+        for (ability, [minVal, maxVal]) in self.abilitySpinners.items():
+            filters["Abilities"].update({ability: [minVal.value(), maxVal.value()]})
+
+        return filters
+
+
+
     def setup_archetypes(self):
         """
         Sets up the global archetypes dictionary to be filled with the database contents
@@ -75,16 +102,18 @@ class SelectorMenu:
         scrollArea.setWidget(widget)
 
     def setup_start_btn(self):
+        errorCode = ""
         values = [["str"], ["dex"], ["con"], ["int"], ["wis"], ["cha"]]
         spinners = self.abilitySpinners
         for x in range(0, len(spinners.items())):
             values[x].append(list(spinners.values())[x][0].value())
 
-        errorCode = self.check_ability_boundaries(values) + " " + self.check_skills()
+        if self.centre.findChild(QComboBox, "primaryArchetypes").currentText() == "Primary Archetype":
+            errorCode += "No primary archetype selected.\n"
+        errorCode += self.check_ability_boundaries(values) + " " + self.check_skills()
         self.centre.findChild(QLabel, "error").setText(errorCode)
         if errorCode == " ":
-            # start the program
-            pass
+            self.controller.load_optimisation()
 
     def setup_advanced_btn(self):
         """
@@ -97,15 +126,6 @@ class SelectorMenu:
         advFilters.setGraphicsEffect(shadow)
         advFilters.clicked.connect(partial(self.controller.start_advanced_filters_menu))
         self.centre.findChild(QVBoxLayout, "filtersLayout").addWidget(advFilters)
-
-    def archetype_button_pressed(self, arch_desc):
-        """
-        When pressed, the button sets the text box to the buttons' archetype description.
-        :param arch_desc: the description of the selected archetype
-        :type arch_desc: str
-        """
-        archDesc = self.centre.findChild(QTextEdit, "archetypeDesc")
-        archDesc.setPlainText(arch_desc)
 
     def setup_archetype_dropdowns(self):
         """
@@ -146,6 +166,8 @@ class SelectorMenu:
                 column.addWidget(nextBox)
                 self.skillCheckBoxes.append(nextBox)
 
+
+
     def check_skills(self):
         """
         Checks there isn't an excess amount of skills selected.
@@ -159,6 +181,17 @@ class SelectorMenu:
             return "Too many skills selected."
         else:
             return ""
+
+    def archetype_button_pressed(self, arch_desc):
+        """
+        When pressed, the button sets the text box to the buttons' archetype description.
+        :param arch_desc: the description of the selected archetype
+        :type arch_desc: str
+        """
+        archDesc = self.centre.findChild(QTextEdit, "archetypeDesc")
+        archDesc.setPlainText(arch_desc)
+
+
 
     @staticmethod
     def setup_abilities_boxes(layout):

@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>811</width>
-    <height>727</height>
+    <height>745</height>
    </rect>
   </property>
   <property name="palette">
@@ -676,9 +676,9 @@ border-style: outset;</string>
     <property name="geometry">
      <rect>
       <x>210</x>
-      <y>670</y>
+      <y>675</y>
       <width>401</width>
-      <height>31</height>
+      <height>50</height>
      </rect>
     </property>
     <property name="layoutDirection">
