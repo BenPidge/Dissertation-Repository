@@ -41,6 +41,7 @@ class Chromosome:
     def __init__(self, character, tags, magic_weight, health_weight):
         """
         Initialises the chromosome with a provided character object and tags.
+        This should be called primarily, if not completely, through the ChromosomeController.
         :param character: the character the chromosome will represent
         :type character: class: `Character.Character`
         :param tags: the tags that it's sorting will judge it off, in a [tag, weight] layout

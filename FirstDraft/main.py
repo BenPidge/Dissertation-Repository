@@ -1,4 +1,4 @@
-from Database import DatabaseSetup, DataExtractor, CoreDatabase, DataConverter
+from Database import DatabaseSetup, DataExtractor, CoreDatabase, DataConverter, CharacterBuilder
 from Optimisation import Chromosome
 from Visuals import VisualsController
 
@@ -22,7 +22,8 @@ def begin():
           "3. Data Extractor\n"
           "4. Data Converter\n"
           "5. View Tables\n"
-          "6. General testing\n"
+          "6. Character Builder\n"
+          "7. General testing\n"
           "9. Exit")
     menu = CoreDatabase.int_input("> ")
     DataConverter.create_all_equipment()
@@ -37,6 +38,8 @@ def begin():
     elif menu == 5:
         CoreDatabase.view_tables()
     elif menu == 6:
+        CharacterBuilder.begin()
+    elif menu == 7:
         testing()
     else:
         SystemExit(0)

@@ -256,7 +256,7 @@ def make_choice(num_of_choices, choices):
         choiceCount = list({i: choiceCount.count(i) for i in choiceCount}.items())
         for z in range(0, len(choiceCount)):
             objects = []
-            for l in range(0, choiceCount[z][1]):
+            for s in range(0, choiceCount[z][1]):
                 objects.append(choiceCount[z][0])
             choiceDict.update({f"({choiceCount[z][1]}x) {str(choiceCount[z][0])}": objects})
 
