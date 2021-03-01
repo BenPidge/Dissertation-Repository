@@ -2,38 +2,47 @@ import itertools
 
 import CharacterElements.Magic
 from CharacterElements import Character, Class, Equipment, Race, Spell
-from Database import DataExtractor, CoreDatabase as Db
+from Database import DataExtractor, ChoiceStruct, CoreDatabase as Db
 
 
-def create_character(chr_lvl):
+selected_results = None
+
+
+def create_character(chr_lvl, chr_choices=None):
     """
     Creates a character object at the given level.
     :param chr_lvl: the level to build the character at
     :type chr_lvl: int
+    :param chr_choices: the choices made to apply for this character
+    :type chr_choices: optional, list
     :return: a character object
     """
+    global selected_results
+    if chr_choices is not None:
+        selected_results = ChoiceStruct.ChoiceStruct(chr_choices)
+
     Db.cursor.execute(f"SELECT backgroundName FROM Background")
     backgrounds = list(itertools.chain(*Db.cursor.fetchall()))
-    background = create_background(make_choice(1, backgrounds)[0])
+    background = create_background(make_choice(1, backgrounds, "Background")[0])
 
     Db.cursor.execute(f"SELECT raceName FROM Race")
     races = list(itertools.chain(*Db.cursor.fetchall()))
-    race = make_choice(1, races)[0]
+    race = make_choice(1, races, "Race")[0]
     Db.cursor.execute(f"SELECT subraceName FROM Subrace WHERE raceId={Db.get_id(race, 'Race')}")
     subraces = list(itertools.chain(*Db.cursor.fetchall()))
     if len(subraces) > 0:
-        subraceId = Db.get_id(make_choice(1, subraces)[0], "Subrace")
+        subraceId = Db.get_id(make_choice(1, subraces, "Subrace")[0], "Subrace")
         race = create_race(race, chr_lvl, subraceId)
     else:
         race = create_race(race, chr_lvl)
 
     Db.cursor.execute(f"SELECT className FROM Class")
     classes = list(itertools.chain(*Db.cursor.fetchall()))
-    chrClass = make_choice(1, classes)[0]
+    chrClass = make_choice(1, classes, "Class")[0]
     Db.cursor.execute(f"SELECT subclassName FROM Subclass WHERE classId={Db.get_id(chrClass, 'Class')}")
     subclasses = list(itertools.chain(*Db.cursor.fetchall()))
     if len(subclasses) > 0:
-        chrClass = create_class(chrClass, chr_lvl, create_subclass(make_choice(1, subclasses)[0], chr_lvl))
+        chrClass = create_class(chrClass, chr_lvl, create_subclass(make_choice(1, subclasses, "Subclass")[0], chr_lvl))
     else:
         chrClass = create_class(chrClass, chr_lvl)
 
@@ -51,9 +60,9 @@ def create_background(background_name):
     tools, skills, languages = DataExtractor.background_connections(background_name)
     finalProfs, finalLanguages = [], []
 
-    finalProfs += make_choice(tools[0], tools[1])
-    finalProfs += make_choice(skills[0], skills[1])
-    finalLanguages = make_choice(languages[0], languages[1])
+    finalProfs += make_choice(tools[0], tools[1], background_name)
+    finalProfs += make_choice(skills[0], skills[1], background_name)
+    finalLanguages = make_choice(languages[0], languages[1], background_name)
 
     return Character.Background(background_name, finalProfs, finalLanguages)
 
@@ -161,7 +170,7 @@ def create_race(race_name, chr_lvl, subrace_id=-1, is_subrace=False):
         if (subId is None and subrace_id == -1) or (subId == subrace_id):
             Db.cursor.execute("SELECT traitDescription FROM Trait WHERE traitName='" + trait + "'")
             traits.append((trait, Db.cursor.fetchone()[0]))
-    traits = choose_trait_option(traits)
+    traits = choose_trait_option(traits, race_name)
 
     # extracts data from options
     spells, modUsed, proficiencies, languages = collect_race_option_data(race_name, chr_lvl, subrace_id)
@@ -193,7 +202,7 @@ def create_equipment(class_name):
     optionsData = DataExtractor.equipment_connections(Db.get_id(class_name, "Class"))
     equipment = []
     for option in optionsData:
-        equipment += create_equipment_option(option)[1]
+        equipment += create_equipment_option(option, class_name)[1]
     return equipment
 
 
@@ -224,7 +233,7 @@ def create_ability_scores(priorities):
     return abilityScores
 
 
-def make_choice(num_of_choices, choices):
+def make_choice(num_of_choices, choices, element):
     """
     Lets the user choose a certain amount of items from an array of options.
     Any use of this should be replaced with the optimising algorithm when possible.
@@ -232,11 +241,25 @@ def make_choice(num_of_choices, choices):
     :type num_of_choices: int
     :param choices: a list of the choices available
     :type choices: list
+    :param element: the element to be building for - such as Class or the class name you're making a suboption for
+    :type element: str
     :return: a list of the choices selected
     """
     output = []
     if num_of_choices >= len(choices):
         output = choices
+
+    # automatic output
+    elif selected_results is not None:
+        for x in range(num_of_choices):
+            choice = selected_results.get_element(choices, element)
+            if choice == 0:
+                output.append(choices[0])
+                choices.pop(0)
+            else:
+                output.append(choice)
+
+    # manual output
     else:
         choiceCount = []
         choiceDict = dict()
@@ -273,12 +296,12 @@ def make_choice(num_of_choices, choices):
                 output.append(list(choiceDict.values())[nextAddition])
                 choiceDict.pop(list(choiceDict.keys())[nextAddition])
 
-    allStr = True
+    safe = True
     for x in range(0, len(output)):
-        if type(output[x]) is not str:
-            allStr = False
+        if type(output[x]) not in (str, CharacterElements.Spell.Spell):
+            safe = False
 
-    if not(len(output) == 1 and type(output[0]) is not list) and allStr is False and type(output[0]) is not tuple:
+    if not(len(output) == 1 and type(output[0]) is not list) and safe is False and type(output[0]) is not tuple:
         output = list(itertools.chain(*output))
     return output
 
@@ -309,17 +332,17 @@ def collect_race_option_data(race_name, chr_lvl, subrace_id=-1):
         metadata, options = DataExtractor.race_options_connections(nextId[0], subrace_id)
         if len(options) > 0:
             if metadata[1] == "proficiencies":
-                proficiencies += make_choice(metadata[0], options)
+                proficiencies += make_choice(metadata[0], options, race_name)
             elif metadata[1] == "spells":
                 spellNames = []
                 for spell in options:
                     spellNames.append(spell[0])
                 print(nextId)
-                spells = make_choice(metadata[0], spellNames)
+                spells = make_choice(metadata[0], spellNames, race_name)
                 spells = build_race_spells(options, spells, chr_lvl)
                 modUsed = options[0][3]
             else:
-                languages += make_choice(metadata[0], options)
+                languages += make_choice(metadata[0], options, race_name)
     return spells, modUsed, proficiencies, languages
 
 
@@ -383,9 +406,9 @@ def create_class_magic(class_name, class_lvl, subclass_name=""):
         cantripsKnown -= (Db.cursor.fetchone()[0] + cantripIncl)
 
     # chooses spells
-    selectedSpells = make_choice(cantripsKnown, cantripObjects) + subclassSpellObjects
+    selectedSpells = make_choice(cantripsKnown, cantripObjects, class_name) + subclassSpellObjects
     if spellsPrepared is False:
-        selectedSpells += make_choice(amntKnown, spellObjects)
+        selectedSpells += make_choice(amntKnown, spellObjects, class_name)
         params = [spellslots, False, amntKnown, selectedSpells]
     else:
         params = [spellslots, True, amntKnown, selectedSpells, knownCalc, spellObjects]
@@ -416,20 +439,22 @@ def collect_class_option_data(class_name, class_lvl, subclass_id=-1):
         metadata, options = DataExtractor.class_options_connections(nextId[0])
         if metadata[0] <= class_lvl:
             if metadata[2] == "traits":
-                traits = make_choice(metadata[1], options)
-                traits = choose_trait_option(traits)
+                traits = make_choice(metadata[1], options, class_name)
+                traits = choose_trait_option(traits, class_name)
             elif metadata[2] == "proficiencies":
-                proficiencies = make_choice(metadata[1], options)
+                proficiencies = make_choice(metadata[1], options, class_name)
             else:
-                languages = make_choice(metadata[1], options)
+                languages = make_choice(metadata[1], options, class_name)
     return traits, proficiencies, languages
 
 
-def choose_trait_option(traits):
+def choose_trait_option(traits, parent):
     """
     Goes through traits in order to make any trait choices required.
     :param traits: the list of traits, each being the format (name, desc)
     :type traits: list
+    :param parent: the class or race(or other) that this trait is being received from
+    :type parent: str
     :return: the updated list of traits
     """
     choices = []
@@ -440,7 +465,7 @@ def choose_trait_option(traits):
         if len(options) > 0:
             for option in options:
                 choices.append(option)
-            selectedOption = make_choice(1, choices)
+            selectedOption = make_choice(1, choices, parent)
             choices.clear()
             traits[x] = (traits[x][0], str(traits[x][1]) + " " + str(selectedOption[0][0]))
             print(traits[x])
@@ -462,19 +487,21 @@ def create_all_equipment():
             Equipment.Equipment(*equip)
 
 
-def create_equipment_option(option):
+def create_equipment_option(option, class_name):
     """
     Creates a single equipment option set.
     :param option: a list of metadata and objects in the option,
-    in the layout [[isChoice boolean, [optional subsection]], [equipment objects]]
+                   in the layout [[isChoice boolean, [optional subsection]], [equipment objects]]
     :type option: list
+    :param class_name: the name of the class this is being built for
+    :type class_name: str
     :return: whether the option was a choice, and a list of the equipment objects selected
     """
     metadata, items = option
     itemChoices = items
     if len(metadata) > 1:
         for subsection in metadata[1:]:
-            choice, subsectionVal = create_equipment_option(subsection)
+            choice, subsectionVal = create_equipment_option(subsection, class_name)
             items += subsectionVal
             if choice is False:
                 for x in range(0, len(subsectionVal)):
@@ -482,7 +509,7 @@ def create_equipment_option(option):
                 itemChoices.append(subsectionVal)
 
     if metadata[0] is True:
-        equipment = make_choice(1, itemChoices)
+        equipment = make_choice(1, itemChoices, class_name)
     else:
         equipment = items
     return metadata[0], equipment

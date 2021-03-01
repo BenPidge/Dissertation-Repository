@@ -113,7 +113,7 @@ class Character:
 
         newMagic = Magic.Magic(elements[0], elements[1], elements[2], elements[3], elements[4], elements[5],
                                abilities, raceSpells)
-        if magic.areSpellsPrepared:
+        if magic is not None and magic.areSpellsPrepared:
             newMagic.preparedSpellAmnt = self.ability_mod(magic.preparedSpellCalculation[:3]) + self.chrClass.level
 
         return newMagic

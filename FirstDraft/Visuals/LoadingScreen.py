@@ -2,8 +2,9 @@ import math
 
 from PyQt5 import uic
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QScrollArea, QLabel, QGridLayout
+
+from Database import DataConverter, CharacterBuilder
 
 
 class LoadingScreen:
@@ -34,6 +35,7 @@ class LoadingScreen:
             .findChild(QWidget, "scrollerContents").setLayout(self.filterVbox)
         self.extract_filters()
 
+        self.utilise_filters()
         self.window.show()
 
     def extract_filters(self):
@@ -44,10 +46,6 @@ class LoadingScreen:
 
         self.extract_core_stats()
         self.extract_abilities()
-
-        # abilities
-        # minimum AC
-
         # goes through and adds all list-based filters
         for filterType, elements in self.filters.items():
             if type(elements) == list and len(elements) > 0:
@@ -113,4 +111,27 @@ class LoadingScreen:
             nextLabel.setStyleSheet('font: 12pt "Times New Roman"; color: rgb(188, 189, 177);')
             grid.addWidget(nextLabel, math.floor(counter/3), counter % 3, alignment=Qt.AlignCenter)
             counter += 1
+
+    def utilise_filters(self):
+        print(self.filters)
+        convertedFilters = []
+        for heading, elements in self.filters.items():
+            choiceType = heading[:-1]
+            whereFrom = ["Background", "ClassOptions", "RaceOptions"]
+            if heading in ("Proficiencies", "Skills"):
+                choiceType = "Proficiency"
+            elif heading == "Spells":
+                whereFrom = ["Race", "Class"]
+            elif heading == "Equipment":
+                choiceType = "Equipment"
+                whereFrom = "Class"
+            elif heading != "Languages":
+                choiceType = ""
+
+            if choiceType != "":
+                for element in elements:
+                    convertedFilters.append([element, choiceType, whereFrom])
+        convertedFilters = CharacterBuilder.take_choices(convertedFilters)
+        chr = DataConverter.create_character(1, convertedFilters)
+        print(chr)
 

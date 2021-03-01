@@ -67,8 +67,11 @@ def background_connections(background_name):
     proficiencies = get_names_from_connector("Background", "Proficiency", input_name=background_name)
     languages = get_names_from_connector("Background", "Language", input_name=background_name)
 
+    for x in range(len(proficiencies)):
+        proficiencies[x] = proficiencies[x].replace("'", "''")
     Db.cursor.execute("SELECT proficiencyName, proficiencyType FROM Proficiency WHERE proficiencyName IN ('"
-                      + "', '".join(proficiencies).replace("'", "''") + "')")
+                      + "', '".join(proficiencies) + "')")
+
     skills, tools = [], []
     for pair in Db.cursor.fetchall():
         if pair[1] == "Skill":
