@@ -7,8 +7,9 @@ class ChoiceStruct:
         :param choices: the choices to be transformed into Choice objects
         :type choices: dict
         """
-        for choice_type, (choice, subchoices) in choices.items():
-            self.append(Choice(choice_type, choice, subchoices))
+        if type(choices) is dict:
+            for choice_type, (choice, subchoices) in choices.items():
+                self.append(Choice(choice_type, choice, subchoices))
 
     def clear(self):
         """
@@ -42,10 +43,15 @@ class ChoiceStruct:
         elementObj = self.get_from_name(element)
         if elementObj != 0:
             for choice in potential_choices:
-                if choice in elementObj.elements:
+                if type(choice) is not str:
+                    choiceName = choice.name
+                else:
+                    choiceName = choice
+
+                if choiceName in elementObj.elements:
                     elementObj.pop(choice)
                     return choice
-                elif choice == elementObj.name:
+                elif choiceName == elementObj.name:
                     return choice
         return 0
 
@@ -62,7 +68,7 @@ class ChoiceStruct:
         Converts the ChoiceStruct into an easily readable string representation
         :return: the string representation
         """
-        output = f"This ChoiceStruct holds the following elements:\n"
+        output = "This ChoiceStruct holds the following elements:\n"
         for choiceObj in self.contents:
             output += str(choiceObj) + "\n"
         return output

@@ -5,6 +5,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QScrollArea, QLabel, QGridLayout
 
 from Database import DataConverter, CharacterBuilder
+from Optimisation import ChromosomeController
 
 
 class LoadingScreen:
@@ -113,25 +114,5 @@ class LoadingScreen:
             counter += 1
 
     def utilise_filters(self):
-        print(self.filters)
-        convertedFilters = []
-        for heading, elements in self.filters.items():
-            choiceType = heading[:-1]
-            whereFrom = ["Background", "ClassOptions", "RaceOptions"]
-            if heading in ("Proficiencies", "Skills"):
-                choiceType = "Proficiency"
-            elif heading == "Spells":
-                whereFrom = ["Race", "Class"]
-            elif heading == "Equipment":
-                choiceType = "Equipment"
-                whereFrom = "Class"
-            elif heading != "Languages":
-                choiceType = ""
-
-            if choiceType != "":
-                for element in elements:
-                    convertedFilters.append([element, choiceType, whereFrom])
-        convertedFilters = CharacterBuilder.take_choices(convertedFilters)
-        chr = DataConverter.create_character(1, convertedFilters)
-        print(chr)
+        ChromosomeController.build_chromosome(self.filters)
 

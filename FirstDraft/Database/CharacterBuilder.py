@@ -13,14 +13,18 @@ def take_choices(choices):
     allOptions = dict()
     optionCount = []
     for [choice, choiceType, placesFrom] in choices:
-        nextResult = extract_choice(choice, choiceType, placesFrom)
+        if choiceType in ("Class", "Race", "Background"):
+            nextResult = {choice: [choiceType + ": " + choice]}
+        else:
+            nextResult = extract_choice(choice, choiceType, placesFrom)
         allOptions.update(nextResult)
         optionCount += itertools.chain(*nextResult.values())
     optionCount = Counter(optionCount)
 
     result = option_combos(allOptions, optionCount)
     if len(result) == 0:
-        print("You've asked for impossible requirements")
+        if len(choices) > 0:
+            print("You've asked for impossible requirements")
         return -1
     else:
         print(result)
@@ -53,12 +57,21 @@ def extract_choice(choice, choice_loc, places_from):
             call = f"SELECT {place.lower()}Name FROM {place} WHERE {place.lower()}Id IN (" \
                    f"SELECT {place.lower()}Id FROM {basePlace.capitalize()} WHERE {basePlace}Id IN (" + call + ")"
         elif choice_loc == "Equipment":
-            call = f"SELECT {place.lower()}Name FROM {place} WHERE {place.lower()}Id IN (" \
-                   f"SELECT {place.lower()}Id FROM EquipmentOption WHERE equipOptionId IN (" \
+            call = f"SELECT className FROM Class WHERE classId IN (" \
+                   f"SELECT classId FROM EquipmentOption WHERE equipOptionId IN (" \
                    f"SELECT equipmentOptionId FROM EquipmentIndivOption WHERE equipmentId=(" \
                    f"SELECT equipmentId FROM Equipment WHERE equipmentName='{choice}')))"
+        elif choice_loc == "Spell":
+            call = f"SELECT {basePlace}Name FROM {place} WHERE {basePlace}Id IN ("
+            if place == "Race":
+                call += "SELECT raceId FROM RaceOptions WHERE raceOptionsId IN (" \
+                        "SELECT raceOptionsId FROM RaceSpell WHERE spellId IN ("
+            else:
+                call += "SELECT classId FROM Magic WHERE magicId IN (" \
+                        "SELECT magicId FROM ClassSpell WHERE spellId IN ("
+            call += f"SELECT spellId FROM Spell WHERE spellName='{choice}')))"
         else:
-            call = f"SELECT {place.lower()}Name FROM {place} WHERE {place.lower()}Id IN (" + call
+            call = f"SELECT {basePlace}Name FROM {place} WHERE {basePlace}Id IN (" + call
 
         Db.cursor.execute(call)
         for result in itertools.chain(*Db.cursor.fetchall()):

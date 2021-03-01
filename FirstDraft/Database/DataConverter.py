@@ -253,7 +253,7 @@ def make_choice(num_of_choices, choices, element):
     elif selected_results is not None:
         for x in range(num_of_choices):
             choice = selected_results.get_element(choices, element)
-            if choice == 0:
+            if choice == 0 or choice in output:
                 output.append(choices[0])
                 choices.pop(0)
             else:
@@ -261,40 +261,7 @@ def make_choice(num_of_choices, choices, element):
 
     # manual output
     else:
-        choiceCount = []
-        choiceDict = dict()
-
-        # converts any list choices into a single string, directing a dictionary to the list of objects
-        for x in range(0, len(choices)):
-            if type(choices[x]) is list:
-                fullStr = ""
-                for y in list({i: choices[x].count(i) for i in choices[x]}.items()):
-                    fullStr += f"({str(y[1])}x) {str(y[0])}\n"
-                choiceDict.update({fullStr: choices[x]})
-            else:
-                choiceCount.append(choices[x])
-
-        # puts all single-object choices into the dictionary,
-        # linking their string to the appropriate amount of the object
-        choiceCount = list({i: choiceCount.count(i) for i in choiceCount}.items())
-        for z in range(0, len(choiceCount)):
-            objects = []
-            for s in range(0, choiceCount[z][1]):
-                objects.append(choiceCount[z][0])
-            choiceDict.update({f"({choiceCount[z][1]}x) {str(choiceCount[z][0])}": objects})
-
-        # lists their options
-        while len(output) < num_of_choices:
-            print("Choose one from: ")
-            counter = 0
-            for key in list(choiceDict.keys()):
-                counter += 1
-                print(str(counter) + ".\n" + key)
-
-            nextAddition = Db.int_input(">") - 1
-            if nextAddition < len(choiceDict.keys()):
-                output.append(list(choiceDict.values())[nextAddition])
-                choiceDict.pop(list(choiceDict.keys())[nextAddition])
+        output = manual_output(num_of_choices, choices)
 
     safe = True
     for x in range(0, len(output)):
@@ -303,6 +270,54 @@ def make_choice(num_of_choices, choices, element):
 
     if not(len(output) == 1 and type(output[0]) is not list) and safe is False and type(output[0]) is not tuple:
         output = list(itertools.chain(*output))
+    return output
+
+
+def manual_output(num_of_choices, choices):
+    """
+    Gets a manual output for a choice.
+    :param num_of_choices: the amount of choices to make
+    :type num_of_choices: int
+    :param choices: the choices to select from
+    :type choices: list
+    :return: a list of the choices selected
+    """
+    output = []
+    choiceCount = []
+    choiceDict = dict()
+
+    # converts any list choices into a single string, directing a dictionary to the list of objects
+    for x in range(0, len(choices)):
+        if type(choices[x]) is list:
+            fullStr = ""
+            for y in list({i: choices[x].count(i) for i in choices[x]}.items()):
+                fullStr += f"({str(y[1])}x) {str(y[0])}\n"
+            choiceDict.update({fullStr: choices[x]})
+        else:
+            choiceCount.append(choices[x])
+
+    # puts all single-object choices into the dictionary,
+    # linking their string to the appropriate amount of the object
+    choiceCount = list({i: choiceCount.count(i) for i in choiceCount}.items())
+    for z in range(0, len(choiceCount)):
+        objects = []
+        for s in range(0, choiceCount[z][1]):
+            objects.append(choiceCount[z][0])
+        choiceDict.update({f"({choiceCount[z][1]}x) {str(choiceCount[z][0])}": objects})
+
+    # lists their options
+    while len(output) < num_of_choices:
+        print("Choose one from: ")
+        counter = 0
+        for key in list(choiceDict.keys()):
+            counter += 1
+            print(str(counter) + ".\n" + key)
+
+        nextAddition = Db.int_input(">") - 1
+        if nextAddition < len(choiceDict.keys()):
+            output.append(list(choiceDict.values())[nextAddition])
+            choiceDict.pop(list(choiceDict.keys())[nextAddition])
+
     return output
 
 
@@ -337,7 +352,6 @@ def collect_race_option_data(race_name, chr_lvl, subrace_id=-1):
                 spellNames = []
                 for spell in options:
                     spellNames.append(spell[0])
-                print(nextId)
                 spells = make_choice(metadata[0], spellNames, race_name)
                 spells = build_race_spells(options, spells, chr_lvl)
                 modUsed = options[0][3]
@@ -359,7 +373,6 @@ def build_race_spells(spells_data, spell_names, chr_lvl):
     """
     spellObjects = []
     for x in range(0, len(spell_names)):
-        print(spells_data[x])
         if spells_data[x][2] <= chr_lvl:
             spellObjects.append((Spell.get_spell(spell_names[x], chr_lvl), spells_data[x][1]))
     return spellObjects
@@ -468,7 +481,6 @@ def choose_trait_option(traits, parent):
             selectedOption = make_choice(1, choices, parent)
             choices.clear()
             traits[x] = (traits[x][0], str(traits[x][1]) + " " + str(selectedOption[0][0]))
-            print(traits[x])
     return traits
 
 
