@@ -207,7 +207,7 @@ def class_options_connections(class_options_id, subclass_id=-1):
 
     newTraits = []
     for trait in traits:
-        Db.cursor.execute("SELECT traitDescription FROM Trait WHERE traitName='" + trait + "'")
+        Db.cursor.execute("SELECT traitDescription FROM Trait WHERE traitName='" + trait.replace("'", "''") + "'")
         desc = Db.cursor.fetchone()[0]
         newTraits.append((trait, desc))
     traits = newTraits

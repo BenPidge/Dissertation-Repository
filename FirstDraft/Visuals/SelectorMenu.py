@@ -71,7 +71,7 @@ class SelectorMenu:
 
         # Abilities
         for (ability, [minVal, maxVal]) in self.abilitySpinners.items():
-            filters["Abilities"].update({ability: [minVal.value(), maxVal.value()]})
+            filters["Abilities"].update({ability.upper(): [minVal.value(), maxVal.value()]})
 
         return filters
 
@@ -113,7 +113,7 @@ class SelectorMenu:
         errorCode += self.check_ability_boundaries(values) + " " + self.check_skills()
         self.centre.findChild(QLabel, "error").setText(errorCode)
         if errorCode == " ":
-            self.controller.load_optimisation()
+            self.controller.show_loading_screen()
 
     def setup_advanced_btn(self):
         """

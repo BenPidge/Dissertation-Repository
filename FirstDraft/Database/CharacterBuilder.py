@@ -1,6 +1,7 @@
 import itertools
-from Database import CoreDatabase as Db, DataConverter
 from collections import Counter
+
+from Database import CoreDatabase as Db, DataConverter
 
 
 def take_choices(choices):
@@ -13,7 +14,7 @@ def take_choices(choices):
     allOptions = dict()
     optionCount = []
     for [choice, choiceType, placesFrom] in choices:
-        if choiceType in ("Class", "Race", "Background"):
+        if choiceType in ("Class", "Race", "Background", "Subrace", "Subclass"):
             nextResult = {choice: [choiceType + ": " + choice]}
         else:
             nextResult = extract_choice(choice, choiceType, placesFrom)
@@ -27,7 +28,6 @@ def take_choices(choices):
             print("You've asked for impossible requirements")
         return -1
     else:
-        print(result)
         return result
 
 

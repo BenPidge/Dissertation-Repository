@@ -28,6 +28,10 @@ def build_chromosome(filters):
             choiceType = heading
             whereFrom = [heading]
             elements = [elements]
+        elif heading in ("Subrace", "Subclass"):
+            choiceType = heading
+            whereFrom = [heading.replace("Sub", "").capitalize()]
+            elements = [elements]
         elif heading != "Languages":
             choiceType = ""
 
@@ -37,7 +41,7 @@ def build_chromosome(filters):
 
     # builds a character
     convertedFilters = CharacterBuilder.take_choices(convertedFilters)
-    newChr = DataConverter.create_character(1, convertedFilters)
+    newChr = DataConverter.create_character(1, convertedFilters, filters["Abilities"])
 
     # extracts the tags for the selected archetypes
     primaryArch = filters["Primary"]
@@ -51,6 +55,7 @@ def build_chromosome(filters):
     tags = [[i, j] for (i, j) in tags.items()]
     currentGen.append(Chromosome(newChr, tags, magicWeight, healthWeight))
     print(currentGen[0])
+
 
 
 def extract_tags(primary_arch, secondary_arch=None):

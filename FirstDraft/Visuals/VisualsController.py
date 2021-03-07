@@ -1,6 +1,9 @@
 from io import StringIO
+
+from PyQt5.QtCore import pyqtSignal, QObject
 from PyQt5.QtWidgets import QApplication, QGraphicsDropShadowEffect
-from Visuals import SelectorMenu, AdvancedFiltersMenu, LoadingScreen
+
+from Visuals import SelectorMenu, AdvancedFiltersMenu, ConfirmationScreen, CharacterReviewController
 
 
 class VisualsController:
@@ -12,7 +15,12 @@ class VisualsController:
     app = QApplication([])
     selectorMenu = None
     advancedFiltersMenu = None
-    loadingScreen = None
+    confirmationScreen = None
+    characterReview = None
+
+    thread = None
+    loading = None
+    character_review = None
 
     def begin(self):
         """
@@ -21,12 +29,18 @@ class VisualsController:
         # the declarations are done here for the potential future use of resets
         self.selectorMenu = SelectorMenu.SelectorMenu()
         self.advancedFiltersMenu = AdvancedFiltersMenu.AdvancedFiltersMenu()
-        self.loadingScreen = LoadingScreen.LoadingScreen()
+        self.confirmationScreen = ConfirmationScreen.ConfirmationScreen()
+        self.characterReview = CharacterReviewController.CharacterReviewController()
         self.advancedFiltersUsed = False
         self.filters = dict()
-
         self.selectorMenu.begin(self)
+
+        self.show_selector_menu()
         self.app.exec_()
+
+    def show_selector_menu(self):
+        self.selectorMenu.window.show()
+        self.confirmationScreen.window.hide()
 
     def start_advanced_filters_menu(self):
         """
@@ -55,16 +69,22 @@ class VisualsController:
             if type(item) is list:
                 self.filters[tag].sort()
 
-    def load_optimisation(self):
+    def show_loading_screen(self):
         """
-        Provides a visual gap between the user requesting optimisation and the time taken to run
-        optimising and visualising methods.
+        Displays the loading screen while the optimisation occurs.
         """
         self.retrieve_filters()
-
-        self.loadingScreen.begin(self)
+        self.confirmationScreen.begin(self)
         self.selectorMenu.window.hide()
-        self.loadingScreen.window.show()
+        self.confirmationScreen.window.show()
+
+    def load_character_review(self):
+        """
+        Starts up the character review menu.
+        """
+        self.characterReview.begin(self)
+        self.confirmationScreen.window.hide()
+        self.characterReview.window.show()
 
     @staticmethod
     def setup_shadows(centre, shadow_items):
@@ -94,3 +114,21 @@ class VisualsController:
         html = StringIO()
         chart.save(html, "html")
         widget.setHtml(html.getvalue())
+
+
+class LoadThread(QObject):
+    complete = pyqtSignal()
+    def __init__(self, menu, controller):
+        super().__init__()
+        self.menu = menu
+        self.controller = controller
+
+    def run(self):
+        print(self.menu.window.windowTitle())
+        self.menu.begin(self.controller)
+        self.menu.window.show()
+        self.complete.emit()
+
+    def shut(self):
+        self.menu.window.hide()
+

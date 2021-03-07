@@ -1,20 +1,22 @@
 import itertools
+import random
 
 import CharacterElements.Magic
 from CharacterElements import Character, Class, Equipment, Race, Spell
 from Database import DataExtractor, ChoiceStruct, CoreDatabase as Db
 
-
 selected_results = None
 
 
-def create_character(chr_lvl, chr_choices=None):
+def create_character(chr_lvl, chr_choices=None, ability_scores=None):
     """
     Creates a character object at the given level.
     :param chr_lvl: the level to build the character at
     :type chr_lvl: int
     :param chr_choices: the choices made to apply for this character
     :type chr_choices: optional, list
+    :param ability_scores: the ability score ranges inputted
+    :type ability_scores: dict
     :return: a character object
     """
     global selected_results
@@ -42,11 +44,25 @@ def create_character(chr_lvl, chr_choices=None):
     Db.cursor.execute(f"SELECT subclassName FROM Subclass WHERE classId={Db.get_id(chrClass, 'Class')}")
     subclasses = list(itertools.chain(*Db.cursor.fetchall()))
     if len(subclasses) > 0:
-        chrClass = create_class(chrClass, chr_lvl, create_subclass(make_choice(1, subclasses, "Subclass")[0], chr_lvl))
+        subclass = create_subclass(make_choice(1, subclasses, "Subclass")[0], chr_lvl)
+        chrClass = create_class(chrClass, chr_lvl, subclass)
     else:
         chrClass = create_class(chrClass, chr_lvl)
 
-    abilityScores = create_ability_scores((chrClass.mainAbility, chrClass.secondAbility))
+    raceAdditions = dict()
+    if ability_scores is not None:
+        for ability, mod in race.abilityScores.items():
+            if ability == "ALL":
+                if chrClass.mainAbility not in race.abilityScores.keys():
+                    ability = chrClass.mainAbility.split("/")[0]
+                else:
+                    ability = chrClass.secondAbility.split("/")[0]
+
+            ability_scores[ability][1] = ability_scores[ability][1] - mod
+            raceAdditions.update({ability: mod})
+
+    abilityScores = create_ability_scores((chrClass.mainAbility, chrClass.secondAbility), ability_scores,
+                                          raceAdditions)
     return Character.Character(race, chrClass, background, abilityScores)
 
 
@@ -67,15 +83,15 @@ def create_background(background_name):
     return Character.Background(background_name, finalProfs, finalLanguages)
 
 
-def create_class(class_name, class_lvl, subclass_name=""):
+def create_class(class_name, class_lvl, subclass=""):
     """
     Creates and returns a class object, given the name of the class to use.
     :param class_name: the name of the class selected
     :type class_name: str
     :param class_lvl: the level to build the class at
     :type class_lvl: int
-    :param subclass_name: the subclass to add to this object
-    :type subclass_name: object, optional
+    :param subclass: the subclass to add to this object
+    :type subclass: object, optional
     :return: a python object representing the class
     """
     classId = Db.get_id(class_name, "Class")
@@ -83,9 +99,7 @@ def create_class(class_name, class_lvl, subclass_name=""):
                       "WHERE classId=" + str(classId))
     hitDice, primaryAbility, secondaryAbility, isMagical, savingThrows = Db.cursor.fetchone()
 
-    if subclass_name != "":
-        subclass = create_subclass(subclass_name, class_lvl)
-    else:
+    if subclass == "":
         subclass = None
 
     traits, proficiencies, languages = collect_class_option_data(class_name, class_lvl)
@@ -168,7 +182,7 @@ def create_race(race_name, chr_lvl, subrace_id=-1, is_subrace=False):
         Db.cursor.execute("SELECT subraceId FROM RaceTrait WHERE traitId=" + str(Db.get_id(trait, "Trait")))
         subId = Db.cursor.fetchone()[0]
         if (subId is None and subrace_id == -1) or (subId == subrace_id):
-            Db.cursor.execute("SELECT traitDescription FROM Trait WHERE traitName='" + trait + "'")
+            Db.cursor.execute("SELECT traitDescription FROM Trait WHERE traitName='" + trait.replace("'", "''") + "'")
             traits.append((trait, Db.cursor.fetchone()[0]))
     traits = choose_trait_option(traits, race_name)
 
@@ -188,6 +202,10 @@ def create_race(race_name, chr_lvl, subrace_id=-1, is_subrace=False):
         spells = None
         modUsed = None
 
+    if is_subrace:
+        Db.cursor.execute("SELECT subraceName FROM Subrace WHERE subraceId=" + str(subrace_id))
+        race_name = Db.cursor.fetchone()[0]
+
     return Race.Race(race_name, languages, proficiencies, abilityScores, traits, speed, size, darkvision,
                      spells, modUsed, resistance, subrace)
 
@@ -206,31 +224,82 @@ def create_equipment(class_name):
     return equipment
 
 
-def create_ability_scores(priorities):
+def create_ability_scores(priorities, filters, race_additions):
     """
     Creates ability scores using point buy, and the inputted priorities.
     :param priorities: a (primary, secondary) pair of the two main priorities
     :type priorities: tuple
+    :param filters: the filters stating the ranges that ability scores must be in
+    :type filters: dict
+    :param race_additions: the additional bonuses gained from race
+    :type race_additions: dict
     :return: a dictionary holding the 6 ability scores, with the layout {ability: score}
     """
     availablePoints = 27
     abilityScores = dict({"STR": 8, "DEX": 8, "CON": 8, "INT": 8, "WIS": 8, "CHA": 8})
-    # REPLACE ALL BELOW WITH CALCULATIONS HERE
-    abilityScores[priorities[0]] = 15
-    abilityScores[priorities[1]] = 15
-    if abilityScores["CON"] < 15:
-        abilityScores["CON"] = 15
-    else:
-        incomplete = True
-        counter = 0
-        keyList = list(abilityScores.keys())
-        while incomplete is True:
-            if abilityScores[keyList[counter]] < 15:
-                abilityScores[keyList[counter]] = 15
-                incomplete = False
-            counter += 1
+    abilityPriorities = list(priorities)
+    if "/" in priorities[0]:
+        abilityPriorities[0] = priorities[0].split("/")[random.randint(0,1)]
+    if "CON" not in priorities:
+        abilityPriorities.append("CON")
+    for key in abilityScores.keys():
+        if key not in abilityPriorities:
+            abilityPriorities.append(key)
 
+    for ability, [min_val, max_val] in filters.items():
+        if min_val > abilityScores[ability]:
+            abilityScores.update({ability: min_val})
+            availablePoints -= convert_score_to_points(min_val)
+
+    if availablePoints < 0:
+        print("Invalid build")
+    elif availablePoints > 0:
+        while availablePoints > 0:
+            for ability in abilityPriorities:
+                score = abilityScores[ability]
+                score, availablePoints = attempt_score_increase(score, availablePoints, filters[ability][1])
+                abilityScores[ability] = score
+
+    for ability, mod in race_additions.items():
+        abilityScores[ability] += mod
     return abilityScores
+
+
+def convert_score_to_points(score):
+    """
+    Converts an ability score value to the points it costs to purchase.
+    :param score: the score to convert
+    :type score: int
+    :return: an integer value of the points it costs
+    """
+    if score > 15:
+        return 28
+    elif score > 13:
+        return (score - 13) * 2 + 5
+    else:
+        return score - 8
+
+
+def attempt_score_increase(score, available_points, max):
+    """
+    Attempts to increase the score as much as possible.
+    :param score: the current score to increase
+    :type score: int
+    :param available_points: the amount of available points left
+    :type available_points: int
+    :param max: the maximum value the score can be
+    :type max: int
+    :return: the new score and available points
+    """
+    while available_points >= 0 and score <= max:
+        available_points += convert_score_to_points(score)
+        score += 1
+        available_points -= convert_score_to_points(score)
+
+    available_points += convert_score_to_points(score)
+    score -= 1
+    available_points -= convert_score_to_points(score)
+    return score, available_points
 
 
 def make_choice(num_of_choices, choices, element):
@@ -254,8 +323,9 @@ def make_choice(num_of_choices, choices, element):
         for x in range(num_of_choices):
             choice = selected_results.get_element(choices, element)
             if choice == 0 or choice in output:
-                output.append(choices[0])
-                choices.pop(0)
+                random_choice = random.randint(0, len(choices)-1)
+                output.append(choices[random_choice])
+                choices.pop(random_choice)
             else:
                 output.append(choice)
 
@@ -449,7 +519,7 @@ def collect_class_option_data(class_name, class_lvl, subclass_id=-1):
         Db.get_id(class_name, "Class")) + " AND subclassId" + subclassStr)
     ids = Db.cursor.fetchall()
     for nextId in ids:
-        metadata, options = DataExtractor.class_options_connections(nextId[0])
+        metadata, options = DataExtractor.class_options_connections(nextId[0], subclass_id)
         if metadata[0] <= class_lvl:
             if metadata[2] == "traits":
                 traits = make_choice(metadata[1], options, class_name)

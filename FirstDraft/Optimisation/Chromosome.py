@@ -85,8 +85,6 @@ class Chromosome:
         self.generic_tags = self.pull_generic_tags()
         for (tag, weight, fitness) in self.tags:
             self.update_indiv_tag_fitness(tag, self.get_tag_fitness(tag))
-        print(self.tags)
-        print("\n\n")
 
     def get_tag_fitness(self, tag):
         """
@@ -131,9 +129,12 @@ class Chromosome:
         Db.cursor.execute("SELECT proficiencyId FROM TagProficiency WHERE tagId=" + str(tag_id))
         for pId in Db.cursor.fetchall():
             Db.cursor.execute("SELECT proficiencyName FROM Proficiency WHERE proficiencyId=" + str(pId[0]))
-            prof = Db.cursor.fetchone()[0]
-            if prof in self.character.proficiencies:
-                values += self.character.get_skill_value(prof)
+            try:
+                prof = Db.cursor.fetchone()[0]
+                if prof in self.character.proficiencies:
+                    values += self.character.get_skill_value(prof)
+            except TypeError:
+                pass
 
         return values
 
