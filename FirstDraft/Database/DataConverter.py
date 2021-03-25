@@ -16,7 +16,7 @@ def create_character(chr_lvl, chr_choices=None, ability_scores=None):
     :param chr_choices: the choices made to apply for this character
     :type chr_choices: optional, list
     :param ability_scores: the ability score ranges inputted
-    :type ability_scores: dict
+    :type ability_scores: optional, dict
     :return: a character object
     """
     global selected_results
@@ -60,6 +60,10 @@ def create_character(chr_lvl, chr_choices=None, ability_scores=None):
 
             ability_scores[ability][1] = ability_scores[ability][1] - mod
             raceAdditions.update({ability: mod})
+    else:
+        ability_scores = dict()
+        for score in ["STR", "DEX", "CON", "INT", "WIS", "CHA"]:
+            ability_scores.update({score: [8, 15]})
 
     abilityScores = create_ability_scores((chrClass.mainAbility, chrClass.secondAbility), ability_scores,
                                           raceAdditions)
@@ -246,7 +250,7 @@ def create_ability_scores(priorities, filters, race_additions):
         if key not in abilityPriorities:
             abilityPriorities.append(key)
 
-    for ability, [min_val, max_val] in filters.items():
+    for ability, [min_val, _] in filters.items():
         if min_val > abilityScores[ability]:
             abilityScores.update({ability: min_val})
             availablePoints -= convert_score_to_points(min_val)

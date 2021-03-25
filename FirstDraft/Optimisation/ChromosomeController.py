@@ -1,5 +1,6 @@
 from Database import CharacterBuilder, DataConverter, CoreDatabase as Db
 from Optimisation.Chromosome import Chromosome
+from pymoo.algorithms.nsga2 import NSGA2
 
 
 currentGen = []
@@ -57,7 +58,6 @@ def build_chromosome(filters):
     print(currentGen[0])
 
 
-
 def extract_tags(primary_arch, secondary_arch=None):
     """
     Extracts the tags and their calculated weighting from archetypes.
@@ -95,4 +95,15 @@ def extract_tags(primary_arch, secondary_arch=None):
 
         archCount += 1
     return round(healthWeight, 2), round(magicWeight, 2), tags
+
+
+def begin_optimising():
+    # look at Pymoo notes for explanations during implementation
+    # this is all currently a reference for the layout
+
+    # problem = get_problem(x)
+    # algorithm = NSGA2(pop_size=100, ...)
+    # ?
+    # nondominatedFront = problem.pareto_front()
+    return None
 

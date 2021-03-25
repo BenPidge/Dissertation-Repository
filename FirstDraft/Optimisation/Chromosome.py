@@ -10,7 +10,7 @@ def pull_generic_tag(tag_name, data, weight, archetype_tags, archetype_weight_di
     Adjusts the inputted weighting dictionary based on the occurrences of archetype tags in the inputted data set.
     :param tag_name: the singular name of the type of item being pulled, such as Spell
     :type tag_name: str
-    :param data: the names of all data pieces to pull tags from
+    :param data: the names of all data pieces to pull tags from, with their relevant data values, in a 2D array
     :type data: list
     :param weight: the weighting to be applied to recorded occurrences of the tags
     :type weight: int
@@ -20,13 +20,13 @@ def pull_generic_tag(tag_name, data, weight, archetype_tags, archetype_weight_di
     :type archetype_weight_dict: dict
     :return: the updated archetype weight dictionary
     """
-    for dataPiece in data:
+    for dataPiece, dataValue in data:
         tags = DataExtractor.get_names_from_connector(tag_name, "GenericTag", input_name=dataPiece)
         tagAmnt = Counter(tags)
         for match in set(tags).intersection(archetype_tags):
             # calculates the weighted value of the match, based on it's amount of occurrences, and adds this
             # to the archetype weighting dictionaries current value
-            weightedWorth = (tagAmnt[match] * weight)
+            weightedWorth = (tagAmnt[match] * (weight + dataValue))
             archetype_weight_dict.update({match: (archetype_weight_dict[match] + weightedWorth)})
     return archetype_weight_dict
 
@@ -178,14 +178,32 @@ class Chromosome:
         for tag in archetypeTags:
             archetypeWeightDict.update({tag: 0})
 
-        # prepares lists of the names of each data group
+        # prepares lists of the names of each data group, with their related data values
+        # they have easily adjustable data value weightings, with the base values typically being
+        # their maximum dice values, plus 1 for every dice above 1, to represent the benefit of more dice
         equipment, spells, traits = [], [], []
         for eq in self.character.chrClass.equipment:
-            equipment.append(eq.name)
+            if eq.armorClass != 0:
+                equipVal = (eq.armorClass - 10)/4.0
+            elif eq.dice is not None:
+                diceValues = eq.dice.split("d")
+                equipVal = (int(diceValues[0]) * int(diceValues[1])) + (int(diceValues[0]) - 1)
+                equipVal /= 6.0
+            else:
+                equipVal = 0
+            equipment.append([eq.name, equipVal])
+
         for spell in (self.character.magic.knownSpells + self.character.magic.preparedSpellOptions):
-            spells.append(spell.name)
+            if spell.damage is None:
+                spellDmg = 0
+            else:
+                spellDmgVals = spell.damage.split("d")
+                spellDmg = (int(spellDmgVals[0]) * int(spellDmgVals[1])) + (int(spellDmgVals[0]) - 1)
+                spellDmg /= 6.0
+            spells.append([spell.name, spellDmg])
+
         for trait in self.character.traits:
-            traits.append(trait[0])
+            traits.append([trait[0], 0])
 
         archetypeWeightDict = pull_generic_tag("Equipment", equipment, weights[0], archetypeTags, archetypeWeightDict)
         archetypeWeightDict = pull_generic_tag("Spell", spells, weights[1], archetypeTags, archetypeWeightDict)

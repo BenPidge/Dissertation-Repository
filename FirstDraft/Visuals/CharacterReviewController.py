@@ -95,8 +95,8 @@ class CharacterReviewController:
         data = pd.DataFrame(data)
         chart = alt.Chart(data).mark_bar(size=20).encode(
             x="Weighting",
-            y="Character",
-            color=alt.condition(self.selector, alt.value("Green"), "Tag:N")
+            y=alt.Y("Character:N", sort="-x"),
+            color=alt.condition(self.selector, alt.value("Gold"), "Tag:N")
         ).add_selection(self.selector)
 
         return chart
