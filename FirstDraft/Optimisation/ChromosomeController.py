@@ -1,10 +1,24 @@
+from pymoo.optimize import minimize
+
 from Database import CharacterBuilder, DataConverter, CoreDatabase as Db
 from Optimisation.Chromosome import Chromosome
+from Optimisation.PymooOverwrites import ChrMutation, ChrCrossover, ChrSampling, ChrDuplicates, ChrProblem
 from pymoo.algorithms.nsga2 import NSGA2
 
 
 currentGen = []
 nondominatedFront = []
+constFilters = dict()
+
+
+def set_const_filters(filters):
+    """
+    Sets the constant filters to be used regardless of chromosome being built.
+    :param filters: the filters to be the new constant filters
+    :type filters: dict
+    """
+    global constFilters
+    constFilters = filters
 
 
 def build_chromosome(filters):
@@ -12,6 +26,7 @@ def build_chromosome(filters):
     Builds a chromosome and adds it to the list of current chromosomes.
     :param filters: the filters to use to build the chromosome
     :type filters: dict
+    :return: The created chromosome object
     """
     # retrieves the needed filters for building a chr
     convertedFilters = []
@@ -54,8 +69,7 @@ def build_chromosome(filters):
 
     # combines it all to make a chromosome
     tags = [[i, j] for (i, j) in tags.items()]
-    currentGen.append(Chromosome(newChr, tags, magicWeight, healthWeight))
-    print(currentGen[0])
+    return Chromosome(newChr, tags, magicWeight, healthWeight)
 
 
 def extract_tags(primary_arch, secondary_arch=None):
@@ -98,8 +112,9 @@ def extract_tags(primary_arch, secondary_arch=None):
 
 
 def begin_optimising():
-    # look at Pymoo notes for explanations during implementation
-    # this is all currently a reference for the layout
+    algorithm = NSGA2(pop_size=20, sampling=ChrSampling.ChrSampling(), crossover=ChrCrossover.ChrCrossover(),
+                      mutation=ChrMutation.ChrMutation(), eliminate_duplicates=ChrDuplicates.ChrDuplicates())
+    results = minimize(ChrProblem.ChrProblem(), algorithm)  # may need more
 
     # problem = get_problem(x)
     # algorithm = NSGA2(pop_size=100, ...)

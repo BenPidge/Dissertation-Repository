@@ -4,7 +4,7 @@ class Class:
     def __init__(self, name, traits, proficiencies, equipment, main_ability, second_ability, saving_throws, hit_dice,
                  languages, level, magic=None, subclass=None):
         """
-
+        Initialises the Class object with the appropriate variables.
         :param name: The name of the class
         :type name: str
         :param traits: The text-based traits the class grants in (name, description) pairs.
@@ -33,15 +33,15 @@ class Class:
         if languages is None:
             languages = []
         self.name = name
-        self.traits = traits
-        self.proficiencies = proficiencies
-        self.equipment = equipment
+        self.traits = sorted(traits)
+        self.proficiencies = sorted(proficiencies)
+        self.equipment = sorted(equipment)
         self.mainAbility = main_ability
         self.secondAbility = second_ability
         self.savingThrows = saving_throws.split(", ")
         self.hitDice = hit_dice
         self.magic = magic
-        self.languages = languages
+        self.languages = sorted(languages)
         self.level = level
 
         if subclass is not None:
@@ -68,6 +68,30 @@ class Class:
                 self.magic = subclass.magic
             else:
                 self.magic.knownSpells += subclass.magic.knownSpells
+
+    def __eq__(self, other):
+        """
+        Compares the class object with another class.
+        Note that this function could be condensed into one line, but is separated for the sake of clarity and potential
+        error locating.
+        :param other: the other class object to compare against
+        :type other: Class
+        :return: a boolean stating whether they're equal
+        """
+        # compares the basic-type class variables
+        isEqual = self.name == other.name and self.mainAbility == other.mainAbility \
+                    and self.secondAbility == other.secondAbility and self.hitDice == other.hitDice \
+                    and self.level == other.level
+
+        # compares the container class variables
+        isEqual = isEqual and self.traits == other.traits and self.proficiencies == other.proficiencies \
+                    and self.equipment == other.equipment and self.languages == other.languages \
+                    and self.savingThrows == other.savingThrows
+
+        # compares the CharacterElements object type class variable
+        isEqual = isEqual and self.magic == other.magic
+
+        return isEqual
 
     def __str__(self):
         """

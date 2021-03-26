@@ -86,7 +86,8 @@ class Character:
             else:
                 tools.append(proficiency)
 
-        return {"Armor": armor, "Weapons": weapons, "Tools": tools, "Saving throws": saving_throws}
+        return {"Armor": sorted(armor), "Weapons": sorted(weapons),
+                "Tools": sorted(tools), "Saving throws": sorted(saving_throws)}
 
     def setup_magic(self):
         """
@@ -126,6 +127,26 @@ class Character:
         :return: the ability modifier value
         """
         return math.floor(self.abilityScores[ability_score] / 2) - 5
+
+    def __eq__(self, other):
+        """
+        Compares the character object with another character.
+        Note that this function could be condensed into one line, but is separated for the sake of clarity and potential
+        error locating.
+        :param other: the other character object to compare against
+        :type other: Character
+        :return: a boolean stating whether they're equal
+        """
+        # compares the base-type class variables
+        isEqual = self.proficiencyBonus == other.proficiencyBonus and self.proficiencies == other.proficiencies and \
+                    sorted(self.traits) == sorted(other.traits) and sorted(self.languages) == sorted(other.languages) \
+                    and self.abilityScores == other.abilityScores
+
+        # compares the class variables that are objects of types within the CharacterElements package
+        isEqual = isEqual and self.magic == other.magic and self.background == other.background and \
+                    self.race == other.race and self.chrClass == other.chrClass
+
+        return isEqual
 
     def __str__(self):
         """
@@ -177,6 +198,16 @@ class Background:
         self.name = name
         self.proficiencies = proficiencies
         self.languages = languages
+
+    def __eq__(self, other):
+        """
+        Compares the background object with another background.
+        :param other: the other background object to compare against
+        :type other: Background
+        :return: a boolean stating whether they're equal
+        """
+        return self.name == other.name and sorted(self.proficiencies) == sorted(other.proficiencies) \
+                and sorted(self.languages) == sorted(other.languages)
 
     def __str__(self):
         """

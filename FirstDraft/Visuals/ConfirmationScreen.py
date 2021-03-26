@@ -60,6 +60,7 @@ class ConfirmationScreen:
         self.centre.findChild(QLabel, "loadingLabel").show()
         self.centre.findChild(QLabel, "title").setText("Optimisation & Visualisation Processing")
 
+        ChromosomeController.set_const_filters(self.controller.filters)
         ChromosomeController.build_chromosome(self.controller.filters)
         ChromosomeController.build_chromosome(self.controller.filters)
         ChromosomeController.build_chromosome(self.controller.filters)

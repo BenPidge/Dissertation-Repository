@@ -36,7 +36,7 @@ class Magic:
 
         self.spellAmount = spell_amount
         self.spellSlot = spell_slot
-        self.knownSpells = list(set(known_spells + known_secondary_spells))
+        self.knownSpells = sorted(list(set(known_spells + known_secondary_spells)))
         self.areSpellsPrepared = are_spells_prepared
         self.preparedSpellCalculation = prepared_spell_calculation
         self.preparedSpellOptions = prepared_spell_options
@@ -47,7 +47,28 @@ class Magic:
                 self.spellcasting.update({casting_abilities[0]: self.knownSpells.copy()})
             else:
                 self.spellcasting.update({casting_abilities[0]: known_spells,
-                                          casting_abilities[1]: known_secondary_spells})
+                                          casting_abilities[1]: sorted(known_secondary_spells)})
+
+    def __eq__(self, other):
+        """
+        Compares the magic object with another magic.
+        Note that this function could be condensed into one line, but is separated for the sake of clarity and potential
+        error locating.
+        :param other: the other magic object to compare against
+        :type other: Magic
+        :return: a boolean stating whether they're equal
+        """
+        # compares the non-container class variables
+        isEqual = self.spellAmount == other.spellAmount and self.areSpellsPrepared == other.areSpellsPrepared \
+                    and self.preparedSpellCalculation == other.preparedSpellCalculation \
+                    and self.preparedSpellAmnt == other.preparedSpellAmnt
+
+        # compares the container class variables
+        isEqual = isEqual and self.spellSlot == other.spellSlot and self.spellcasting == other.spellcasting \
+                    and self.knownSpells == other.knownSpells \
+                    and sorted(self.preparedSpellOptions) == sorted(other.preparedSpellOptions)
+
+        return isEqual
 
     def __str__(self):
         """

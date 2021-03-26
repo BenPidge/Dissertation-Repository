@@ -35,7 +35,6 @@ class Chromosome:
     """A singular potential solution for the optimisation problem."""
 
     fitness = 0
-    nondominatedFront = 0
     generic_tags = dict()
 
     def __init__(self, character, tags, magic_weight, health_weight):
@@ -210,6 +209,27 @@ class Chromosome:
         archetypeWeightDict = pull_generic_tag("Trait", traits, weights[2], archetypeTags, archetypeWeightDict)
 
         return archetypeWeightDict
+
+    def __eq__(self, other):
+        """
+        Compares the chromosome object with another chromosome.
+        Note that this function could be condensed into one line, but is separated for the sake of clarity and potential
+        error locating.
+        :param other: the other chromosome object to compare against
+        :type other: Chromosome
+        :return: a boolean stating whether they're equal
+        """
+        # compares the tags and fitness
+        isEqual = self.fitness == other.fitness and self.generic_tags == other.generic_tags \
+                                                and sorted(self.tags) == sorted(other.tags)
+
+        # compares the health and magic
+        isEqual = isEqual and self.health == other.health and self.magic == other.magic
+
+        # compares character objects
+        isEqual = isEqual and self.character == other.character
+
+        return isEqual
 
     def __str__(self):
         """

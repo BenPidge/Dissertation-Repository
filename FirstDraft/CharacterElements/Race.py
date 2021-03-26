@@ -76,15 +76,15 @@ class Race:
         """
         dataDict = {
             "name": self.name,
-            "languages": self.languages,
-            "proficiencies": self.proficiencies,
+            "languages": sorted(self.languages),
+            "proficiencies": sorted(self.proficiencies),
             "abilityScores": self.abilityScores,
-            "traits": self.traits,
+            "traits": sorted(self.traits),
             "speed": self.speed,
             "size": self.size,
             "darkvision": self.darkvision,
             "resistance": self.resistance,
-            "spells": self.spells,
+            "spells": sorted(self.spells),
             "spellMod": self.spellMod
         }
 
@@ -95,6 +95,15 @@ class Race:
                 del dataDict[key]
 
         return dataDict
+
+    def __eq__(self, other):
+        """
+        Compares the race object with another race.
+        :param other: the other race object to compare against
+        :type other: Race
+        :return: a boolean stating whether they're equal
+        """
+        return self.get_data() == other.get_data()
 
     def __str__(self):
         """
