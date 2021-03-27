@@ -37,7 +37,7 @@ class Chromosome:
     fitness = 0
     generic_tags = dict()
 
-    def __init__(self, character, tags, magic_weight, health_weight):
+    def __init__(self, character, tags, magic_weight, health_weight, filters):
         """
         Initialises the chromosome with a provided character object and tags.
         This should be called primarily, if not completely, through the ChromosomeController.
@@ -45,8 +45,15 @@ class Chromosome:
         :type character: class: `Character.Character`
         :param tags: the tags that it's sorting will judge it off, in a [tag, weight] layout
         :type tags: list
+        :param magic_weight: the weighting of how magic the chromosome is
+        :type magic_weight: float
+        :param health_weight: the weighting of how tanky the chromosome is
+        :type health_weight: float
+        :param filters: the filters to use to build the chromosome
+        :type filters: dict
         """
         self.character = character
+        self.filters = filters
         self.health = [health_weight, (character.chrClass.hitDice - 6)/2 + character.ability_mod("CON")]
 
         # calculates the magic weighting
@@ -57,12 +64,29 @@ class Chromosome:
         for (ability, spells) in character.magic.spellcasting.items():
             self.magic[1] += len(spells)
 
-        # tags is a 2D array with nested array layouts of [tag, tags' weighting, tags' unweighted individual fitness]
+        # tags is a 2D array with nested array layouts of [tag, tags' weighting, tags' individual fitness]
         self.tags = []
-        for (tag, weight) in tags:
+        for (tag, weight) in sorted(tags):
             self.tags.append([tag, weight, 0])
 
         self.extract_tags()
+
+    def get_tag_fitness_values(self):
+        """
+        Returns the tag fitness values in the order they're stored.
+        :return: the tag fitness values, in a list
+        """
+        weights = []
+        for (_, _, fitness) in self.tags:
+            weights.append(fitness)
+        return weights
+
+    def calculate_fitness(self):
+        """
+        Sums the total of all tags' fitness values.
+        """
+        for (_, _, fitness) in self.tags:
+            self.fitness += fitness
 
     def update_indiv_tag_fitness(self, tag, addition):
         """
@@ -84,6 +108,7 @@ class Chromosome:
         self.generic_tags = self.pull_generic_tags()
         for (tag, weight, fitness) in self.tags:
             self.update_indiv_tag_fitness(tag, self.get_tag_fitness(tag))
+        self.calculate_fitness()
 
     def get_tag_fitness(self, tag):
         """

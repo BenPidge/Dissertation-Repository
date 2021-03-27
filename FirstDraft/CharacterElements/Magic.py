@@ -54,6 +54,8 @@ class Magic:
         Compares the magic object with another magic.
         Note that this function could be condensed into one line, but is separated for the sake of clarity and potential
         error locating.
+        Many comparisons in this method are unnecessary by default, but including these allows for the consistent easy
+        addition of new elements to the database, without the risk of collision.
         :param other: the other magic object to compare against
         :type other: Magic
         :return: a boolean stating whether they're equal

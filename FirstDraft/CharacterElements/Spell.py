@@ -81,6 +81,40 @@ class Spell:
                 damage = 4
             self.damage = str(damage) + self.damage[1:]
 
+    def __eq__(self, other):
+        """
+        Compares the spell object with another spell.
+        Note that this function could be condensed into one line, but is separated for the sake of clarity and potential
+        error locating.
+        Many comparisons in this method are unnecessary by default, but including these allows for the consistent easy
+        addition of new elements to the database, without the risk of collision.
+        :param other: the other spell object to compare against
+        :type other: Spell
+        :return: a boolean stating whether they're equal
+        """
+        return self.name == other.name and self.level == other.level and self.castingTime == other.castingTime \
+                    and self.duration == other.duration and self.range == other.range \
+                    and self.components == other.components and self.school == other.school \
+                    and sorted(self.tags) == sorted(other.tags) and self.description == other.description \
+                    and self.damage == other.damage and self.attack == other.attack and self.save == other.save \
+                    and self.area == other.area and self.__chrLevel == other.__chrLevel
+
+    def __lt__(self, other):
+        """
+        Tests whether the current spell is less than the passed spell alphabetically.
+        :param other: the other spell to compare against
+        :type other: Spell
+        :return: a boolean stating whether it's less than or not
+        """
+        return self.name < other.name
+
+    def __hash__(self):
+        """
+        Hashes the object based on it's name and description.
+        :return: the hashed value produced
+        """
+        return hash(self.name + self.description)
+
     def __str__(self):
         """
         Returns the data of the spells as a string

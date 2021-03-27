@@ -41,6 +41,10 @@ class Character:
         self.proficiencies = self.setup_proficiencies()
         self.magic = self.setup_magic()
 
+        for eq in self.chrClass.equipment:
+            if eq.armorClass != 0:
+                eq.setup_armor_class(self.abilityScores["DEX"])
+
     def setup_ability_scores(self, ability_scores):
         """
         Adds the racial ability score increases to the inputted ability scores.

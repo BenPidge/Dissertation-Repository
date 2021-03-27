@@ -57,9 +57,58 @@ class Equipment:
         self.sort_to_tags()
 
     def sort_to_tags(self):
-        """Adds a pointer to the object in the tagGroups dictionaries array for each of the objects tags"""
+        """
+        Adds a pointer to the object in the tagGroups dictionaries array for each of the objects tags.
+        """
         for tag in self.tags:
             Equipment.tagGroups[tag] = Equipment.tagGroups[tag] + [self.name]
+
+    def setup_armor_class(self, dex):
+        """
+        Calculates the armor class based on the passed string and the character's dexterity.
+        :param dex:
+        :return:
+        """
+        try:
+            self.armorClass = int(self.armorClass)
+        except ValueError:
+            self.armorClass = str(self.armorClass)
+            if "MAX" in self.armorClass:
+                self.armorClass = int(self.armorClass[:2]) + min(dex, self.armorClass[-2])
+            else:
+                self.armorClass = int(self.armorClass[:2]) + dex
+
+
+    def __eq__(self, other):
+        """
+        Compares the equipment object with another equipment.
+        Note that this function could be condensed into one line, but is separated for the sake of clarity and potential
+        error locating.
+        Many comparisons in this method are unnecessary by default, but including these allows for the consistent easy
+        addition of new elements to the database, without the risk of collision.
+        :param other: the other equipment object to compare against
+        :type other: Equipment
+        :return: a boolean stating whether they're equal
+        """
+        print(other)
+        # compares the basic-type class variables
+        isEqual = self.name == other.name and self.description == other.description and self.dice == other.dice \
+                    and self.value == other.value and self.armorClass == other.armorClass \
+                    and self.strLimit == other.strLimit and self.weight == other.weight
+
+        # compares the container class variables
+        isEqual = isEqual and sorted(self.tags) == sorted(other.tags) and self.range == other.range
+
+        return isEqual
+
+    def __lt__(self, other):
+        """
+        Tests whether the current equipment is less than the passed equipment alphabetically.
+        :param other: the other equipment to compare against
+        :type other: Equipment
+        :return: a boolean stating whether it's less than or not
+        """
+        return self.name < other.name
 
     def __str__(self):
         output = f"{self.name} is worth {self.value}, and weighs {self.weight}lb.\n" \

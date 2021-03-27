@@ -576,7 +576,7 @@ border-style: outset;</string>
    <widget class="QCheckBox" name="lightArmorBtn">
     <property name="geometry">
      <rect>
-      <x>50</x>
+      <x>70</x>
       <y>510</y>
       <width>82</width>
       <height>17</height>
@@ -589,7 +589,7 @@ border-style: outset;</string>
    <widget class="QCheckBox" name="mediumArmorBtn">
     <property name="geometry">
      <rect>
-      <x>50</x>
+      <x>70</x>
       <y>530</y>
       <width>91</width>
       <height>17</height>
@@ -602,7 +602,7 @@ border-style: outset;</string>
    <widget class="QCheckBox" name="heavyArmorBtn">
     <property name="geometry">
      <rect>
-      <x>50</x>
+      <x>70</x>
       <y>550</y>
       <width>82</width>
       <height>17</height>
@@ -615,7 +615,7 @@ border-style: outset;</string>
    <widget class="QCheckBox" name="shieldBtn">
     <property name="geometry">
      <rect>
-      <x>50</x>
+      <x>70</x>
       <y>570</y>
       <width>82</width>
       <height>17</height>
@@ -623,43 +623,6 @@ border-style: outset;</string>
     </property>
     <property name="text">
      <string>Shields</string>
-    </property>
-   </widget>
-   <widget class="QSpinBox" name="minACSpinner">
-    <property name="geometry">
-     <rect>
-      <x>141</x>
-      <y>530</y>
-      <width>31</width>
-      <height>22</height>
-     </rect>
-    </property>
-    <property name="minimum">
-     <number>5</number>
-    </property>
-    <property name="maximum">
-     <number>20</number>
-    </property>
-    <property name="value">
-     <number>10</number>
-    </property>
-   </widget>
-   <widget class="QLabel" name="minACLabel">
-    <property name="geometry">
-     <rect>
-      <x>140</x>
-      <y>510</y>
-      <width>41</width>
-      <height>20</height>
-     </rect>
-    </property>
-    <property name="font">
-     <font>
-      <italic>true</italic>
-     </font>
-    </property>
-    <property name="text">
-     <string>Min AC</string>
     </property>
    </widget>
    <widget class="QLabel" name="langAmntLabel">
@@ -973,8 +936,6 @@ font: 87 9pt &quot;Arial Black&quot;;</string>
    <zorder>mediumArmorBtn</zorder>
    <zorder>heavyArmorBtn</zorder>
    <zorder>shieldBtn</zorder>
-   <zorder>minACSpinner</zorder>
-   <zorder>minACLabel</zorder>
    <zorder>langAmntLabel</zorder>
    <zorder>langAmntSpinner</zorder>
    <zorder>languagesScroller</zorder>

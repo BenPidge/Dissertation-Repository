@@ -115,20 +115,3 @@ class VisualsController:
         chart.save(html, "html")
         widget.setHtml(html.getvalue())
 
-
-class LoadThread(QObject):
-    complete = pyqtSignal()
-    def __init__(self, menu, controller):
-        super().__init__()
-        self.menu = menu
-        self.controller = controller
-
-    def run(self):
-        print(self.menu.window.windowTitle())
-        self.menu.begin(self.controller)
-        self.menu.window.show()
-        self.complete.emit()
-
-    def shut(self):
-        self.menu.window.hide()
-

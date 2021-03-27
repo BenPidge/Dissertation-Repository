@@ -69,7 +69,9 @@ def build_chromosome(filters):
 
     # combines it all to make a chromosome
     tags = [[i, j] for (i, j) in tags.items()]
-    return Chromosome(newChr, tags, magicWeight, healthWeight)
+    chromosome = Chromosome(newChr, tags, magicWeight, healthWeight, filters)
+    currentGen.append(chromosome)
+    return chromosome
 
 
 def extract_tags(primary_arch, secondary_arch=None):
@@ -111,14 +113,18 @@ def extract_tags(primary_arch, secondary_arch=None):
     return round(healthWeight, 2), round(magicWeight, 2), tags
 
 
-def begin_optimising():
+def begin_optimising(tag_num):
+    """
+    Begins the optimisation process for the character requirements.
+    :param tag_num: the amount of tags to consider for the MOEA
+    :type tag_num: int
+    """
     algorithm = NSGA2(pop_size=20, sampling=ChrSampling.ChrSampling(), crossover=ChrCrossover.ChrCrossover(),
                       mutation=ChrMutation.ChrMutation(), eliminate_duplicates=ChrDuplicates.ChrDuplicates())
-    results = minimize(ChrProblem.ChrProblem(), algorithm)  # may need more
+    results = minimize(ChrProblem.ChrProblem(tag_num), algorithm)  # may need more
 
     # problem = get_problem(x)
     # algorithm = NSGA2(pop_size=100, ...)
     # ?
     # nondominatedFront = problem.pareto_front()
-    return None
 

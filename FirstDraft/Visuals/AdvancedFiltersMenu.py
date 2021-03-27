@@ -75,7 +75,6 @@ class AdvancedFiltersMenu:
             if child.isChecked():
                 filters["Proficiencies"].append(child.text())
         matchEquip = self.centre.findChild(QRadioButton, "weaponsMatchEquipmentBtn").isChecked()
-        filters.update({"Minimum AC": self.centre.findChild(QSpinBox, "minACSpinner").value()})
 
         # Languages
         for dropdown in self.centre.findChild(QScrollArea, "languagesScroller")\
