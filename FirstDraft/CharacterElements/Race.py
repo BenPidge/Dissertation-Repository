@@ -33,6 +33,7 @@ class Race:
         """
 
         self.name = name
+        self.raceName = name  # this is used for retaining the race name in cases of subraces
         self.languages = languages
         self.proficiencies = proficiencies
         self.abilityScores = ability_scores
@@ -42,6 +43,8 @@ class Race:
         self.darkvision = darkvision
         self.spellMod = spell_modifier
         self.resistance = resistance
+        self.hasSubrace = (subrace is not None)
+
         if spells is None:
             self.spells = []
         else:

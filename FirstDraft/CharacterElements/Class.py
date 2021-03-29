@@ -33,6 +33,7 @@ class Class:
         if languages is None:
             languages = []
         self.name = name
+        self.className = name  # this is used for retaining the class name in cases of subclasses
         self.traits = sorted(traits)
         self.proficiencies = sorted(proficiencies)
         self.equipment = sorted(equipment)
@@ -43,6 +44,8 @@ class Class:
         self.magic = magic
         self.languages = sorted(languages)
         self.level = level
+        self.hasSubclass = (subclass is not None)
+        self.subclassItems = dict()
 
         if subclass is not None:
             self.extract_subclass(subclass)
@@ -53,21 +56,22 @@ class Class:
         :param subclass: The subclass of the current class selected.
         """
         self.name = subclass.name + " " + self.name
-        subclassDict = subclass.get_data()
-        for key in subclassDict.keys():
+        self.subclassItems = subclass.get_data()
+        for key in self.subclassItems.keys():
             attributeVal = getattr(self, key)
             # if its an array, merge the arrays
             if key in ["languages", "proficiencies", "traits"]:
-                setattr(self, key, attributeVal + subclassDict[key])
+                setattr(self, key, attributeVal + self.subclassItems[key])
             # if it's single value, update the attribute value
             else:
-                setattr(self, key, subclassDict[key])
+                setattr(self, key, self.subclassItems[key])
 
         if subclass.magic is not None:
+            self.subclassItems["spells"] = subclass.magic.knownSpells + subclass.magic.preparedSpellOptions
             if self.magic is None:
                 self.magic = subclass.magic
             else:
-                self.magic.knownSpells += subclass.magic.knownSpells
+                self.magic.knownSpells += subclass.magic.knownSpells + subclass.magic.preparedSpellOptions
 
     def __eq__(self, other):
         """

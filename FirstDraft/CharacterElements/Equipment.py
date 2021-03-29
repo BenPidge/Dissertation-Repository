@@ -90,7 +90,6 @@ class Equipment:
         :type other: Equipment
         :return: a boolean stating whether they're equal
         """
-        print(other)
         # compares the basic-type class variables
         isEqual = self.name == other.name and self.description == other.description and self.dice == other.dice \
                     and self.value == other.value and self.armorClass == other.armorClass \

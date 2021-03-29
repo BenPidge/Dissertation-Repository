@@ -243,7 +243,7 @@ def create_ability_scores(priorities, filters, race_additions):
     abilityScores = dict({"STR": 8, "DEX": 8, "CON": 8, "INT": 8, "WIS": 8, "CHA": 8})
     abilityPriorities = list(priorities)
     if "/" in priorities[0]:
-        abilityPriorities[0] = priorities[0].split("/")[random.randint(0,1)]
+        abilityPriorities[0] = priorities[0].split("/")[random.randint(0, 1)]
     if "CON" not in priorities:
         abilityPriorities.append("CON")
     for key in abilityScores.keys():
@@ -588,11 +588,18 @@ def create_equipment_option(option, class_name):
     if len(metadata) > 1:
         for subsection in metadata[1:]:
             choice, subsectionVal = create_equipment_option(subsection, class_name)
-            items += subsectionVal
             if choice is False:
-                for x in range(0, len(subsectionVal)):
-                    itemChoices.remove(subsectionVal[x])
-                itemChoices.append(subsectionVal)
+                # flatten the list in such a way that it avoids requiring iterator overrides
+                subsectionTempVal = subsectionVal
+                subsectionVal = []
+                for val in subsectionTempVal:
+                    if type(val) is list:
+                        for subval in subsectionTempVal:
+                            subsectionVal.append(subval)
+                    else:
+                        subsectionVal.append(val)
+
+            items += subsectionVal
 
     if metadata[0] is True:
         equipment = make_choice(1, itemChoices, class_name)

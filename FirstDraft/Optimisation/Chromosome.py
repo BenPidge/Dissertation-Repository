@@ -37,7 +37,7 @@ class Chromosome:
     fitness = 0
     generic_tags = dict()
 
-    def __init__(self, character, tags, magic_weight, health_weight, filters):
+    def __init__(self, character, tags, magic_weight, health_weight, archs):
         """
         Initialises the chromosome with a provided character object and tags.
         This should be called primarily, if not completely, through the ChromosomeController.
@@ -49,12 +49,12 @@ class Chromosome:
         :type magic_weight: float
         :param health_weight: the weighting of how tanky the chromosome is
         :type health_weight: float
-        :param filters: the filters to use to build the chromosome
-        :type filters: dict
+        :param archs: the archetypes this tuple is optimising
+        :type archs: tuple
         """
         self.character = character
-        self.filters = filters
         self.health = [health_weight, (character.chrClass.hitDice - 6)/2 + character.ability_mod("CON")]
+        self.archs = archs
 
         # calculates the magic weighting
         self.magic = [magic_weight, self.spellslots_value()]
@@ -234,6 +234,19 @@ class Chromosome:
         archetypeWeightDict = pull_generic_tag("Trait", traits, weights[2], archetypeTags, archetypeWeightDict)
 
         return archetypeWeightDict
+
+    def get_data_as_filters(self):
+        """
+        Retrieves the chromosome data that would be require to recreate it with the chromosome controller.
+        :return: a dictionary of the filter data required
+        """
+        results = self.character.get_data_as_filters()
+        results['Primary'] = self.archs[0]
+        if self.archs[1] is not None:
+            results['Secondary'] = self.archs[1]
+
+        return results
+
 
     def __eq__(self, other):
         """

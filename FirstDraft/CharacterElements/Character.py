@@ -1,7 +1,7 @@
 import itertools
 import math
 
-from CharacterElements import Equipment, Magic
+from CharacterElements import Equipment, Magic, Background
 
 
 class Character:
@@ -26,7 +26,7 @@ class Character:
         :param chr_class: The characters class, stored as a Class object.
         :type chr_class: class: `CharacterElements.Class`
         :param background: The characters background, stored as a Background object.
-        :type background: Background
+        :type background: class: `CharacterElements.Background`
         :param ability_scores: The ability scores of the character.
         :type ability_scores: dict
         """
@@ -79,7 +79,7 @@ class Character:
         armor, weapons, tools, saving throws. Connect these categories and proficiencies with a dictionary of arrays.
         :return: a dictionary, connecting a key for each category with an array of all applicable proficiencies.
         """
-        armor, weapons, tools, saving_throws = [], [], [], []
+        armor, weapons, tools, saving_throws, skills = [], [], [], [], []
         for proficiency in (self.race.proficiencies + self.chrClass.proficiencies + self.background.proficiencies):
             if proficiency in Character.abilities:
                 saving_throws.append(proficiency)
@@ -87,11 +87,14 @@ class Character:
                 armor.append(proficiency)
             elif proficiency in Equipment.get_tag_group("Martial") + Equipment.get_tag_group("Simple"):
                 weapons.append(proficiency)
+            elif proficiency in itertools.chain(*self.skills):
+                skills.append(proficiency)
             else:
                 tools.append(proficiency)
 
         return {"Armor": sorted(armor), "Weapons": sorted(weapons),
-                "Tools": sorted(tools), "Saving throws": sorted(saving_throws)}
+                "Tools": sorted(tools), "Saving throws": sorted(saving_throws),
+                "Skills": sorted(skills)}
 
     def setup_magic(self):
         """
@@ -131,6 +134,44 @@ class Character:
         :return: the ability modifier value
         """
         return math.floor(self.abilityScores[ability_score] / 2) - 5
+
+    def get_data_as_filters(self):
+        """
+        Returns the characters data in a layout matching the filters passed to create a chromosome.
+        :return: the characters data, as a dict
+        """
+        results = dict()
+
+        # gets basic information
+        results.update({'Race': self.race.raceName, 'Class': self.chrClass.className, 'Background': self.background.name,
+                        'Languages': self.languages})
+
+        # gets equipment and spells
+        results['Equipment'] = [e.name for e in self.chrClass.equipment]
+        results['Spells'] = [s.name for s in (self.magic.knownSpells + self.magic.preparedSpellOptions)]
+
+        # gets all proficiencies/skills
+        profLayout = []
+        for type, proficiencies in self.proficiencies.items():
+            if type == "Skills":
+                results['Skills'] = proficiencies
+            else:
+                profLayout += proficiencies
+        results['Proficiencies'] = profLayout
+
+        # converts the layout of ability scores, then adds them
+        abilityLayout = dict()
+        for ability, score in self.abilityScores.items():
+            abilityLayout.update({ability: [score, score]})
+        results['Abilities'] = abilityLayout
+
+        # gets optional information when appropriate
+        if self.race.hasSubrace:
+            results['Subrace'] = self.race.name
+        if self.chrClass.hasSubclass:
+            results['Subclass'] = self.chrClass.name
+
+        return results
 
     def __eq__(self, other):
         """
@@ -183,44 +224,5 @@ class Character:
 
         output += str(self.magic)
 
-        return output
-
-
-
-class Background:
-    """A class representing a character's background."""
-    def __init__(self, name, proficiencies, languages):
-        """
-        Sets up the core data the background contains.
-        :param name: The name of the background
-        :type name: str
-        :param proficiencies: The proficiencies this background provides.
-        :type proficiencies: list
-        :param languages: The languages this background provides.
-        :type languages: list
-        """
-        self.name = name
-        self.proficiencies = proficiencies
-        self.languages = languages
-
-    def __eq__(self, other):
-        """
-        Compares the background object with another background.
-        :param other: the other background object to compare against
-        :type other: Background
-        :return: a boolean stating whether they're equal
-        """
-        return self.name == other.name and sorted(self.proficiencies) == sorted(other.proficiencies) \
-                and sorted(self.languages) == sorted(other.languages)
-
-    def __str__(self):
-        """
-        Converts the object to a string of it's content.
-        :return: the objects relevant content, in a printable layout
-        """
-        output = f"The background is {self.name}:\n" \
-                 f"It gives the proficiencies: {', '.join(self.proficiencies)}\n"
-        if len(self.languages) > 0:
-            output += f"It gives the languages: {', '.join(self.languages)}"
         return output
 

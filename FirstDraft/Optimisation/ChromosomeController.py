@@ -69,7 +69,7 @@ def build_chromosome(filters):
 
     # combines it all to make a chromosome
     tags = [[i, j] for (i, j) in tags.items()]
-    chromosome = Chromosome(newChr, tags, magicWeight, healthWeight, filters)
+    chromosome = Chromosome(newChr, tags, magicWeight, healthWeight, (primaryArch, secondaryArch))
     currentGen.append(chromosome)
     return chromosome
 
