@@ -4,19 +4,20 @@ import math
 from CharacterElements import Equipment, Magic, Background
 
 
+# a 2D array, storing all skills within their relative ability scores
+character_skills = [["Athletics"],  # strength
+                    ["Acrobatics", "Sleight of Hand", "Stealth"],  # dexterity
+                    [],  # constitution(for iteration)
+                    ["Arcana", "History", "Investigation", "Nature", "Religion"],  # intelligence
+                    ["Animal Handling", "Insight", "Medicine", "Perception", "Survival"],  # wisdom
+                    ["Deception", "Intimidation", "Performance", "Persuasion"]]               # charisma
+
+# an array storing all the abilities' shortened names
+character_abilities = ["STR", "DEX", "CON", "INT", "WIS", "CHA"]
+
+
 class Character:
     """A class representing a built character."""
-
-    # a 2D array, storing all skills within their relative ability scores
-    skills = [["Athletics"],                                                            # strength
-              ["Acrobatics", "Sleight of Hand", "Stealth"],                             # dexterity
-              [],                                                                       # constitution(for iteration)
-              ["Arcana", "History", "Investigation", "Nature", "Religion"],             # intelligence
-              ["Animal Handling", "Insight", "Medicine", "Perception", "Survival"],     # wisdom
-              ["Deception", "Intimidation", "Performance", "Persuasion"]]               # charisma
-    # an array storing all the abilities' shortened names
-    abilities = ["STR", "DEX", "CON", "INT", "WIS", "CHA"]
-
 
     def __init__(self, race, chr_class, background, ability_scores):
         """
@@ -67,9 +68,9 @@ class Character:
         value = 0
         if skill in self.proficiencies:
             value += self.proficiencyBonus
-        for x in range(0, len(self.skills)):
-            if skill in self.skills[x]:
-                value += self.abilityScores.get(self.abilities[x])
+        for x in range(0, len(character_skills)):
+            if skill in character_skills[x]:
+                value += self.abilityScores.get(character_abilities[x])
                 break
         return value
 
@@ -81,13 +82,13 @@ class Character:
         """
         armor, weapons, tools, saving_throws, skills = [], [], [], [], []
         for proficiency in (self.race.proficiencies + self.chrClass.proficiencies + self.background.proficiencies):
-            if proficiency in Character.abilities:
+            if proficiency in character_abilities:
                 saving_throws.append(proficiency)
             elif "armor" in proficiency or proficiency.lower() == "shield":
                 armor.append(proficiency)
             elif proficiency in Equipment.get_tag_group("Martial") + Equipment.get_tag_group("Simple"):
                 weapons.append(proficiency)
-            elif proficiency in itertools.chain(*self.skills):
+            elif proficiency in itertools.chain(*skills):
                 skills.append(proficiency)
             else:
                 tools.append(proficiency)
@@ -143,8 +144,8 @@ class Character:
         results = dict()
 
         # gets basic information
-        results.update({'Race': self.race.raceName, 'Class': self.chrClass.className, 'Background': self.background.name,
-                        'Languages': self.languages})
+        results.update({'Race': self.race.raceName, 'Class': self.chrClass.className,
+                        'Background': self.background.name, 'Languages': self.languages})
 
         # gets equipment and spells
         results['Equipment'] = [e.name for e in self.chrClass.equipment]
@@ -152,8 +153,8 @@ class Character:
 
         # gets all proficiencies/skills
         profLayout = []
-        for type, proficiencies in self.proficiencies.items():
-            if type == "Skills":
+        for profType, proficiencies in self.proficiencies.items():
+            if profType == "Skills":
                 results['Skills'] = proficiencies
             else:
                 profLayout += proficiencies

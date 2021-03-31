@@ -15,6 +15,24 @@ class Background:
         self.proficiencies = proficiencies
         self.languages = languages
 
+    def get_data(self):
+        """
+        Combines all non-null data into a dictionary for easy extraction.
+        :return: a dictionary of all non-null background data.
+        """
+        dataDict = {
+            "name": self.name,
+            "languages": self.languages,
+            "proficiencies": self.proficiencies
+        }
+
+        # remove null data
+        for key in dataDict.keys():
+            if dataDict[key] is None:
+                del dataDict[key]
+
+        return dataDict
+
     def __eq__(self, other):
         """
         Compares the background object with another background.

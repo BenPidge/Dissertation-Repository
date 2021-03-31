@@ -1,5 +1,9 @@
+from collections import Counter
+
 import numpy as np
 from pymoo.model.crossover import Crossover
+
+from Optimisation import ChromosomeController
 
 
 class ChrCrossover(Crossover):
@@ -31,15 +35,43 @@ class ChrCrossover(Crossover):
                 parents.append(x[i, cross, 0])
 
             offspring.append(self.breed(parents))
+            offspring.append(self.breed(parents))
 
             # empty offspring list into the output
             for i in range(len(offspring)):
                 output[i, cross, 0] = offspring[i]
         return output
 
-    def breed(self, parents):
+    @staticmethod
+    def breed(parents):
+        """
+        Breeds all parents passed through to produce a single offspring, with randomly selected elements from the
+        parents provided.
+        :param parents: a list of the parent chromosomes to utilise
+        :type parents: list
+        :return: a new chromosome
+        """
         # randomly allocate the class, race and background from one parent
         # make adjustable for over 2 parents, jic
         # consider a case where parents have one of those in common - look into breeding between the suboptions of it
-        return
+        filters = dict({"Race": None, "Class": None, "Background": None,
+                        "Equipment": [], "Spells": [], "Skills": [], "Proficiencies": [], "Languages": []})
+        parentsNum = len(parents)
+        # counts the amount of each element within the parents, to identify matching elements between all parents
+        # if these elements are matching, it shows further breeding between the subelements are needed
+        elements = dict({"Race": (Counter([parent.race.name for parent in parents]),
+                                    [parent.race for parent in parents]),
+                         "Class": (Counter([parent.chrClass.name for parent in parents]),
+                                    [parent.chrClass for parent in parents]),
+                         "Background": (Counter([parent.background.name for parent in parents]),
+                                            [parent.background for parent in parents])})
+
+        for key, (counter, objs) in elements.items():
+            parentIndex = np.random.randint(0, parentsNum)
+            filters[key] = parents[parentIndex]
+            parentInfo = objs[parentIndex].get_data()
+            for sub_element in ["Equipment", "Spells", "Skills", "Proficiencies", "Languages"]:
+                filters[sub_element] += parentInfo.get(sub_element.lower(), [])
+                
+        return ChromosomeController.build_chromosome(filters)
 

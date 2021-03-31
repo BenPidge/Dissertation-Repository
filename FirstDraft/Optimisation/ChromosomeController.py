@@ -1,3 +1,6 @@
+import itertools
+
+from pymoo.factory import get_termination
 from pymoo.optimize import minimize
 
 from Database import CharacterBuilder, DataConverter, CoreDatabase as Db
@@ -57,7 +60,7 @@ def build_chromosome(filters):
 
     # builds a character
     convertedFilters = CharacterBuilder.take_choices(convertedFilters)
-    newChr = DataConverter.create_character(1, convertedFilters, filters["Abilities"])
+    newChr = DataConverter.create_character(1, convertedFilters, filters.get("Abilities"))
 
     # extracts the tags for the selected archetypes
     primaryArch = filters["Primary"]
@@ -113,18 +116,31 @@ def extract_tags(primary_arch, secondary_arch=None):
     return round(healthWeight, 2), round(magicWeight, 2), tags
 
 
-def begin_optimising(tag_num):
+def begin_optimising():
     """
     Begins the optimisation process for the character requirements.
-    :param tag_num: the amount of tags to consider for the MOEA
-    :type tag_num: int
     """
-    algorithm = NSGA2(pop_size=20, sampling=ChrSampling.ChrSampling(), crossover=ChrCrossover.ChrCrossover(),
-                      mutation=ChrMutation.ChrMutation(), eliminate_duplicates=ChrDuplicates.ChrDuplicates())
-    results = minimize(ChrProblem.ChrProblem(tag_num), algorithm)  # may need more
+    # gets the amount of unique tags that the primary - and secondary, if appropriate - archetype(s) optimise
+    if constFilters.get('Secondary', []):
+        Db.cursor.execute(f"SELECT COUNT(DISTINCT tagId) FROM ArchetypeTag "
+                          f"WHERE archetypeId IN ({Db.get_id(constFilters['Primary'], 'Archetype')}, "
+                          f"{Db.get_id(constFilters['Secondary'], 'Archetype')})")
+        tag_num = int(Db.cursor.fetchone()[0])
+    else:
+        Db.cursor.execute(f"SELECT COUNT(DISTINCT tagId) FROM ArchetypeTag "
+                          f"WHERE archetypeId={Db.get_id(constFilters['Primary'], 'Archetype')}")
+        tag_num = int(Db.cursor.fetchone()[0])
 
-    # problem = get_problem(x)
-    # algorithm = NSGA2(pop_size=100, ...)
-    # ?
-    # nondominatedFront = problem.pareto_front()
+    algorithm = NSGA2(pop_size=1, sampling=ChrSampling.ChrSampling(), crossover=ChrCrossover.ChrCrossover(),
+                      mutation=ChrMutation.ChrMutation(), eliminate_duplicates=ChrDuplicates.ChrDuplicates())
+    results = minimize(ChrProblem.ChrProblem(tag_num), algorithm, ("n_gen", 10))
+    nondominatedFront.clear()
+    nondominatedFront.extend(list(itertools.chain(*results.pop.get("F"))))
+
+
+def begin():
+    constFilters.update({'Primary': 'Creator'})
+    begin_optimising()
+    for element in nondominatedFront:
+        print(element.character)
 

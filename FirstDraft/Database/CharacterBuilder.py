@@ -3,6 +3,7 @@ from collections import Counter
 
 import numpy as np
 
+from CharacterElements import Character
 from Database import CoreDatabase as Db, DataConverter
 
 
@@ -386,7 +387,7 @@ def change_basic_filter(character, filters, modifier, element, table_name):
     :return: newly modified filters
     """
     background = character.background.name
-    skillsList = list(itertools.chain(*character.skills))
+    skillsList = list(itertools.chain(*Character.character_skills))
 
     # gets a collection of the current items of the element's type that the background provides
     if element == "Languages":

@@ -2,7 +2,7 @@ import itertools
 import random
 
 import CharacterElements.Magic
-from CharacterElements import Character, Class, Equipment, Race, Spell
+from CharacterElements import Character, Class, Equipment, Race, Spell, Background
 from Database import DataExtractor, ChoiceStruct, CoreDatabase as Db
 
 selected_results = None
@@ -84,7 +84,7 @@ def create_background(background_name):
     finalProfs += make_choice(skills[0], skills[1], background_name)
     finalLanguages = make_choice(languages[0], languages[1], background_name)
 
-    return Character.Background(background_name, finalProfs, finalLanguages)
+    return Background.Background(background_name, finalProfs, finalLanguages)
 
 
 def create_class(class_name, class_lvl, subclass=""):

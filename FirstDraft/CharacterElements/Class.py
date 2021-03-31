@@ -1,3 +1,7 @@
+import itertools
+
+from CharacterElements import Character
+
 
 class Class:
     """A python class representing a character's class."""
@@ -72,6 +76,38 @@ class Class:
                 self.magic = subclass.magic
             else:
                 self.magic.knownSpells += subclass.magic.knownSpells + subclass.magic.preparedSpellOptions
+
+    def get_data(self):
+        """
+        Combines all non-null data into a dictionary for easy extraction.
+        This only consists of data necessary for filter-based recreation.
+        :return: a dictionary of all non-null class data.
+        """
+        # name, profs(skills), profs, langs, equip, spells
+
+        potentialSkills = list(itertools.chain(*Character.character_skills))
+        skills, proficiencies = [], []
+        for nextProf in self.proficiencies:
+            if nextProf in potentialSkills:
+                skills.append(nextProf)
+            else:
+                proficiencies.append(nextProf)
+
+        dataDict = {
+            "name": self.name,
+            "languages": self.languages,
+            "skills": skills,
+            "proficiencies": proficiencies,
+            "equipment": [e.name for e in self.equipment],
+            "spells": [s.name for s in (self.magic.knownSpells + self.magic.preparedSpellOptions)]
+        }
+
+        # remove null data
+        for key in dataDict.keys():
+            if dataDict[key] is None:
+                del dataDict[key]
+
+        return dataDict
 
     def __eq__(self, other):
         """

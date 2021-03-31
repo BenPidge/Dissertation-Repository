@@ -17,7 +17,7 @@ class ChrProblem(Problem):
     def _evaluate(self, x, out, *args, **kwargs):
         """
         Evaluates a chromosome for it's value in meeting the objectives of the task.
-        :param x: a list of the variables to evaluate. In this case, it will always be a single-item list.
+        :param x: a list of the variables to evaluate.
         :type x: list
         :param out: the output of the evaluations, with the F key for objective values and G for constraints
         :type out: dict
@@ -35,4 +35,3 @@ class ChrProblem(Problem):
             except IndexError:
                 fitness_values[i] = 0
         out["F"] = np.array(fitness_values, dtype=float)
-

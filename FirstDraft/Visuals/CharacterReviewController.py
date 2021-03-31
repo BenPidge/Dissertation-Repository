@@ -57,13 +57,13 @@ class CharacterReviewController:
         """
         headings = list()
         counter = 1
-        for chromosome in ChromosomeController.currentGen:
+        for chromosome in ChromosomeController.nondominatedFront:
             name = str(counter) + ". " + chromosome.character.chrClass.name + " " + chromosome.character.race.name
             for tag in chromosome.tags:
                 headings.append({"Character": name, "key": tag[0], "value": tag[2], "category": 0})
             counter += 1
 
-        chromosome = ChromosomeController.currentGen[0]
+        chromosome = ChromosomeController.nondominatedFront[0]
         firstName = "1. " + chromosome.character.chrClass.name + " " + chromosome.character.race.name
         self.selector = alt.selection_single(encodings=['y'], init={'y': firstName})
 
@@ -86,7 +86,7 @@ class CharacterReviewController:
         """
         data = list()
         counter = 1
-        for chromosome in ChromosomeController.currentGen:
+        for chromosome in ChromosomeController.nondominatedFront:
             name = str(counter) + ". " + chromosome.character.chrClass.name + " " + chromosome.character.race.name
             for tag in chromosome.tags:
                 data.append({"Character": name, "Tag": tag[0], "Weighting": tag[2]})
