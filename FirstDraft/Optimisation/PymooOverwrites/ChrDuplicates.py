@@ -2,7 +2,7 @@ from pymoo.model.duplicate import ElementwiseDuplicateElimination
 
 
 class ChrDuplicates(ElementwiseDuplicateElimination):
-    """Detects duplicate chromosome, which the base ElementwiseDuplicateElimination then removes"""
+    """Detects duplicate chromosome, which the base ElementwiseDuplicateElimination then removes."""
 
     def is_equal(self, a, b):
         """

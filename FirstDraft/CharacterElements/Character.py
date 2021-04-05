@@ -1,7 +1,7 @@
 import itertools
 import math
 
-from CharacterElements import Equipment, Magic, Background
+from CharacterElements import Equipment, Magic
 
 
 # a 2D array, storing all skills within their relative ability scores
@@ -18,6 +18,9 @@ character_abilities = ["STR", "DEX", "CON", "INT", "WIS", "CHA"]
 
 class Character:
     """A class representing a built character."""
+
+    armorClass = 0
+    health = 0
 
     def __init__(self, race, chr_class, background, ability_scores):
         """
@@ -42,9 +45,30 @@ class Character:
         self.proficiencies = self.setup_proficiencies()
         self.magic = self.setup_magic()
 
+        # calculates the characters armor class and health
+        self.setup_armor_class()
+        self.setup_health()
+
+    def setup_health(self):
+        """
+        Calculates the amount of health the character would have.
+        """
+        self.health = math.ceil(self.chrClass.hitDice/2) + (self.abilityScores["CON"]//2 - 5)
+        self.health *= self.chrClass.level
+
+    def setup_armor_class(self):
+        """
+        Calculates the armor class of the character, based on their equipment and dexterity modifier
+        """
         for eq in self.chrClass.equipment:
             if eq.armorClass != 0:
-                eq.setup_armor_class(self.abilityScores["DEX"])
+                if eq.name in Equipment.get_tag_group("Armor"):
+                    eq.setup_armor_class(self.abilityScores["DEX"]//2 - 5)
+                    self.armorClass = eq.armorClass
+                else:
+                    self.armorClass += eq.armorClass
+        if self.armorClass == 0:
+            self.armorClass = 10 + self.abilityScores["DEX"]//2 - 5
 
     def setup_ability_scores(self, ability_scores):
         """

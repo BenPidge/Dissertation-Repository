@@ -66,15 +66,15 @@ class Equipment:
     def setup_armor_class(self, dex):
         """
         Calculates the armor class based on the passed string and the character's dexterity.
-        :param dex:
-        :return:
+        :param dex: the dexterity score of the character in possession of this item
+        :type dex: int
         """
         try:
             self.armorClass = int(self.armorClass)
         except ValueError:
             self.armorClass = str(self.armorClass)
             if "MAX" in self.armorClass:
-                self.armorClass = int(self.armorClass[:2]) + min(dex, self.armorClass[-2])
+                self.armorClass = int(self.armorClass[:2]) + min(dex, int(self.armorClass[-2]))
             else:
                 self.armorClass = int(self.armorClass[:2]) + dex
 

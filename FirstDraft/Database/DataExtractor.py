@@ -180,6 +180,7 @@ def create_class_magic(class_name, class_lvl, subclass_name=""):
             spellslots.update({pair[0]: pair[1]})
 
         subclassSpells = get_names_from_connector("Magic", "Spell", magicId)
+        subclassSpells = [spell for spell in subclassSpells if spell not in spells]
     return [cantripsKnown, amntKnown, spellsPrepared, knownCalc], spells, spellslots, subclassSpells
 
 

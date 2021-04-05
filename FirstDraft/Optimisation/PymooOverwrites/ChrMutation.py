@@ -27,7 +27,7 @@ class ChrMutation(Mutation):
             filters = x[i, 0].get_data_as_filters()
 
             if randVal < 80:
-                # gets the elements data from randomResult, and the subvalue to edit it with
+                # gets the elements data from randomResult, and the sub-value to edit it with
                 elementSubdata = randVal % 10
                 element = self.randomResults[(randVal//10) - 1]
 

@@ -61,7 +61,10 @@ class ConfirmationScreen:
         self.centre.findChild(QLabel, "title").setText("Optimisation & Visualisation Processing")
 
         ChromosomeController.set_const_filters(self.controller.filters)
-        ChromosomeController.begin_optimising()
+        ChromosomeController.nondominatedFront.append(ChromosomeController.build_chromosome(self.controller.filters))
+        ChromosomeController.nondominatedFront.append(ChromosomeController.build_chromosome(self.controller.filters))
+        ChromosomeController.nondominatedFront.append(ChromosomeController.build_chromosome(self.controller.filters))
+        # ChromosomeController.begin_optimising()
         QTimer.singleShot(2000, self.controller.load_character_review)
 
 

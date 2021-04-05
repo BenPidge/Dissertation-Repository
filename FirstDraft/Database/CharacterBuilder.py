@@ -5,6 +5,7 @@ import numpy as np
 
 from CharacterElements import Character
 from Database import CoreDatabase as Db, DataConverter
+from Optimisation import ChromosomeController
 
 
 def take_choices(choices):
@@ -151,32 +152,37 @@ def change_filter(character, filters, element, modifier):
     # subrace, subclass - based on race/class
     # Languages, Proficiencies, Skills - class, race or background
     # if possible, it should avoid changing the parent factor that affects it(try not to change class to change skills)
-    if element in ("Race", "Class", "Subrace", "Subclass"):
-        filters = change_core_filter(filters, element, modifier, character)
+    validResults = False
+    modifiedFilters = filters
 
-    elif element in ("Subrace", "Subclass"):
-        # maybe use core filters, with some modifier to keep it within the same race/class
-        pass
+    while not validResults:
+        if element in ("Race", "Class", "Subrace", "Subclass"):
+            modifiedFilters = change_core_filter(filters, element, modifier, character)
 
-    elif element == "Background":
-        change_background_filter(filters, character, modifier)
+        elif element == "Background":
+            modifiedFilters = change_background_filter(filters, character, modifier)
 
-    elif element == "Spells":
-        filters = change_spell_filter(character, filters, modifier)
+        elif element == "Spells":
+            modifiedFilters = change_spell_filter(character, filters, modifier)
 
-    elif element == "Equipment":
-        currentEquip = [e.name for e in character.chrClass.equipment]
-        filters = change_equipment_filter(currentEquip, filters, modifier)
+        elif element == "Equipment":
+            currentEquip = [e.name for e in character.chrClass.equipment]
+            modifiedFilters = change_equipment_filter(currentEquip, filters, modifier)
 
-    else:
-        # languages, proficiencies or skills
-        if element == "Proficiencies":
-            elementSingular = "Proficiency"
         else:
-            elementSingular = element[:-1]
-        filters = change_basic_filter(character, filters, modifier, element, elementSingular)
+            # languages, proficiencies or skills
+            if element == "Proficiencies":
+                elementSingular = "Proficiency"
+            else:
+                elementSingular = element[:-1]
+            modifiedFilters = change_basic_filter(character, filters, modifier, element, elementSingular)
 
-    return filters
+        # makes sure all must-have filters are used
+        # this is also checked wherever possible during the change process, but cannot be done everywhere
+        matchedFilters = [x for x in modifiedFilters if x in ChromosomeController.constFilters]
+        validResults = len(matchedFilters) == len(ChromosomeController.constFilters)
+
+    return modifiedFilters
 
 
 def change_core_filter(filters, element, modifier, character, subset=None):
@@ -207,9 +213,16 @@ def change_core_filter(filters, element, modifier, character, subset=None):
             sqlCall = sqlCall + f" AND {parentTable}Id=" + Db.cursor.fetchone()[0]
         Db.cursor.execute(sqlCall)
         subset = list(itertools.chain(*Db.cursor.fetchall()))
+
     # get the value at the modifier position if there is one, or choose a random one otherwise
+    # avoids overwriting const filters
+    if len(set(filters[element]) - set(ChromosomeController.constFilters[element])) == 0:
+        return filters
     modifier = check_modifier(modifier, subset)
     choice = subset[modifier]
+    while choice in ChromosomeController.constFilters[element]:
+        modifier = check_modifier(100, subset)  # this is set to 100 to guarantee a new random value
+        choice = subset[modifier]
 
     # gets the data the current core filter provides
     # subrace is treat the same as race as no race with subraces has a choice outside the subrace
@@ -299,8 +312,15 @@ def change_spell_filter(character, filters, modifier):
                               f"{Db.get_id(character.chrClass.name, 'Class')}))")
 
         spells = list(set(itertools.chain(*Db.cursor.fetchall())))
+        # avoids overwriting const filters
+        if len(set(currentSpells) - set(ChromosomeController.constFilters["Spells"])) == 0:
+            return filters
         modifier = check_modifier(modifier, spells)
-        currentSpells[np.random.randint(0, len(character.magic.knownSpells))] = spells[modifier]
+        choice = currentSpells[modifier]
+        while choice in ChromosomeController.constFilters["Spells"]:
+            modifier = check_modifier(100, currentSpells)  # this is set to 100 to guarantee a new random value
+            choice = currentSpells[modifier]
+        currentSpells[modifier] = spells[np.random.randint(0, len(spells))]
         filters["Spells"] = currentSpells
 
     # if they only have spells from race
@@ -358,7 +378,7 @@ def change_equipment_filter(current_equip, filters, modifier):
         results = list(set(itertools.chain(*Db.cursor.fetchall())))
         swap = None
         for result in results:
-            if result in current_equip:
+            if result in current_equip and result not in ChromosomeController.constFilters["Equipment"]:
                 swap = result
                 break
         if swap is not None:
@@ -398,6 +418,9 @@ def change_basic_filter(character, filters, modifier, element, table_name):
         backgroundItems = [prof for prof in character.background.proficiencies
                            if prof not in skillsList]
 
+    if len(set(backgroundItems) - set(ChromosomeController.constFilters[element])) == 0:
+        return filters
+
     # if the background provides the correct type of basic filter
     if len(backgroundItems) > 0:
         Db.cursor.execute(f"SELECT {table_name.lower()}Name FROM {table_name} WHERE {table_name.lower()}Id IN ("
@@ -413,6 +436,8 @@ def change_basic_filter(character, filters, modifier, element, table_name):
         # if it can make the successful filter change, it does. Otherwise, it continues to the code below
         if len(results) > 0:
             replacedItem = backgroundItems[np.random.randint(0, len(backgroundItems))]
+            while replacedItem in ChromosomeController.constFilters[element]:
+                replacedItem = backgroundItems[np.random.randint(0, len(backgroundItems))]
             modifier = check_modifier(modifier, results)
             filters[element].replace(replacedItem, results[modifier])
             return filters
