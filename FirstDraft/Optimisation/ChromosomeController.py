@@ -1,6 +1,6 @@
 import itertools
 
-from pymoo.factory import get_termination
+from pymoo.factory import get_termination, np
 from pymoo.optimize import minimize
 
 from Database import CharacterBuilder, DataConverter, CoreDatabase as Db
@@ -56,10 +56,14 @@ def build_chromosome(filters):
 
         if choiceType != "":
             for element in elements:
+                if type(element) is not str:
+                    element = element.name
                 convertedFilters.append([element, choiceType, whereFrom])
 
     # builds a character
     convertedFilters = CharacterBuilder.take_choices(convertedFilters)
+    print("Build_Chromosome")
+    print(convertedFilters)
     newChr = DataConverter.create_character(1, convertedFilters, filters.get("Abilities"))
 
     # extracts the tags for the selected archetypes
@@ -131,16 +135,18 @@ def begin_optimising():
                           f"WHERE archetypeId={Db.get_id(constFilters['Primary'], 'Archetype')}")
         tag_num = int(Db.cursor.fetchone()[0])
 
-    algorithm = NSGA2(pop_size=1, sampling=ChrSampling.ChrSampling(), crossover=ChrCrossover.ChrCrossover(),
+    algorithm = NSGA2(pop_size=10, sampling=ChrSampling.ChrSampling(), crossover=ChrCrossover.ChrCrossover(),
                       mutation=ChrMutation.ChrMutation(), eliminate_duplicates=ChrDuplicates.ChrDuplicates())
-    results = minimize(ChrProblem.ChrProblem(tag_num), algorithm, ("n_gen", 10))
+    results = minimize(ChrProblem.ChrProblem(tag_num), algorithm, ("n_gen", 10), seed=1)
     nondominatedFront.clear()
-    nondominatedFront.extend(list(itertools.chain(*results.pop.get("F"))))
+    nondominatedFront.extend(list(results.X[np.argsort(results.F[:, 0])]))
 
 
 def begin():
     constFilters.update({'Primary': 'Creator'})
     begin_optimising()
+    print("\n\n\nComplete!")
+    print(nondominatedFront)
     for element in nondominatedFront:
-        print(element.character)
+        print(element)
 

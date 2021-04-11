@@ -74,7 +74,11 @@ def get_id(name, table):
     """
     name = name.replace("'", "''")
     cursor.execute("SELECT " + table.lower() + "Id from " + table + " WHERE " + table.lower() + "Name='" + name + "'")
-    return int(cursor.fetchone()[0])
+    try:
+        return int(cursor.fetchone()[0])
+    except TypeError:
+        raise Exception("NoneType error with element name " + str(name) + " and table " + str(table))
+
 
 
 def get_id_from_table(table):

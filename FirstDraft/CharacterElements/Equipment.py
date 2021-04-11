@@ -90,13 +90,16 @@ class Equipment:
         :type other: Equipment
         :return: a boolean stating whether they're equal
         """
+        isEqual = False
         # compares the basic-type class variables
-        isEqual = self.name == other.name and self.description == other.description and self.dice == other.dice \
-                    and self.value == other.value and self.armorClass == other.armorClass \
-                    and self.strLimit == other.strLimit and self.weight == other.weight
-
-        # compares the container class variables
-        isEqual = isEqual and sorted(self.tags) == sorted(other.tags) and self.range == other.range
+        if type(other) is Equipment:
+            isEqual = self.name == other.name and self.description == other.description and self.dice == other.dice \
+                        and self.value == other.value and self.armorClass == other.armorClass \
+                        and self.strLimit == other.strLimit and self.weight == other.weight
+            # compares the container class variables
+            isEqual = isEqual and sorted(self.tags) == sorted(other.tags) and self.range == other.range
+        elif type(other) is str:
+            isEqual = self.name == other
 
         return isEqual
 

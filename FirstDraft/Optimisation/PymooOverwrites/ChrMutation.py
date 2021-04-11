@@ -22,6 +22,7 @@ class ChrMutation(Mutation):
         :type kwargs: dict
         :return: the list of modified chromosomes
         """
+        print("mutate")
         for i in range(len(x)):
             randVal = np.random.randint(0, 100)
             filters = x[i, 0].get_data_as_filters()
@@ -39,6 +40,8 @@ class ChrMutation(Mutation):
                     element = newElement
 
                 filters = CharacterBuilder.change_filter(x[i, 0].character, filters, element, elementSubdata)
+                print(filters)
+                print("\n")
                 x[i, 0] = ChromosomeController.build_chromosome(filters)
 
         return x

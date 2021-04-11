@@ -6,9 +6,73 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>800</width>
-    <height>600</height>
+    <width>1349</width>
+    <height>591</height>
    </rect>
+  </property>
+  <property name="palette">
+   <palette>
+    <active>
+     <colorrole role="Base">
+      <brush brushstyle="SolidPattern">
+       <color alpha="255">
+        <red>255</red>
+        <green>255</green>
+        <blue>255</blue>
+       </color>
+      </brush>
+     </colorrole>
+     <colorrole role="Window">
+      <brush brushstyle="SolidPattern">
+       <color alpha="255">
+        <red>27</red>
+        <green>27</green>
+        <blue>27</blue>
+       </color>
+      </brush>
+     </colorrole>
+    </active>
+    <inactive>
+     <colorrole role="Base">
+      <brush brushstyle="SolidPattern">
+       <color alpha="255">
+        <red>255</red>
+        <green>255</green>
+        <blue>255</blue>
+       </color>
+      </brush>
+     </colorrole>
+     <colorrole role="Window">
+      <brush brushstyle="SolidPattern">
+       <color alpha="255">
+        <red>27</red>
+        <green>27</green>
+        <blue>27</blue>
+       </color>
+      </brush>
+     </colorrole>
+    </inactive>
+    <disabled>
+     <colorrole role="Base">
+      <brush brushstyle="SolidPattern">
+       <color alpha="255">
+        <red>27</red>
+        <green>27</green>
+        <blue>27</blue>
+       </color>
+      </brush>
+     </colorrole>
+     <colorrole role="Window">
+      <brush brushstyle="SolidPattern">
+       <color alpha="255">
+        <red>27</red>
+        <green>27</green>
+        <blue>27</blue>
+       </color>
+      </brush>
+     </colorrole>
+    </disabled>
+   </palette>
   </property>
   <property name="windowTitle">
    <string>Character Review</string>
@@ -17,18 +81,18 @@
    <widget class="QWidget" name="radarBox" native="true">
     <property name="geometry">
      <rect>
-      <x>30</x>
-      <y>10</y>
-      <width>741</width>
-      <height>511</height>
+      <x>0</x>
+      <y>0</y>
+      <width>1349</width>
+      <height>521</height>
      </rect>
     </property>
    </widget>
    <widget class="QPushButton" name="sheetBtn">
     <property name="geometry">
      <rect>
-      <x>314</x>
-      <y>522</y>
+      <x>595</x>
+      <y>520</y>
       <width>171</width>
       <height>31</height>
      </rect>
@@ -50,7 +114,7 @@ color: rgb(255, 255, 255);</string>
    <widget class="QComboBox" name="chrComboBox">
     <property name="geometry">
      <rect>
-      <x>140</x>
+      <x>400</x>
       <y>527</y>
       <width>151</width>
       <height>21</height>
@@ -69,7 +133,7 @@ color: rgb(255, 255, 255);</string>
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>800</width>
+     <width>1349</width>
      <height>21</height>
     </rect>
    </property>

@@ -43,7 +43,7 @@ class ChoiceStruct:
         elementObj = self.get_from_name(element)
         if elementObj != 0:
             for choice in potential_choices:
-                if type(choice) is list or tuple:
+                if type(choice) is list or type(choice) is tuple:
                     if type(choice[0]) is str:
                         choiceName = choice[0]
                     else:

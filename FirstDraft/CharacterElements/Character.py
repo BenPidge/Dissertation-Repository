@@ -128,7 +128,11 @@ class Character:
         """
         raceSpells = []
         for spell in self.race.spells:
-            raceSpells.append(spell[0])
+            # defensive code to avoid potential errors
+            if type(spell) is tuple:
+                raceSpells.append(spell[0])
+            else:
+                raceSpells.append(spell)
 
         if self.chrClass.mainAbility in ["INT", "WIS", "CHA"]:
             abilities = (self.chrClass.mainAbility, self.race.spellMod)

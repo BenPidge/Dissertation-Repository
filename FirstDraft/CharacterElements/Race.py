@@ -1,4 +1,3 @@
-
 class Race:
     """A class representing a character's race."""
 
@@ -60,6 +59,7 @@ class Race:
         :param subrace: The subrace of this race that was selected.
         """
         subraceDict = subrace.get_data()
+        subraceDict["spells"] = sorted(subrace.spells)
         for key in subraceDict.keys():
             attributeVal = getattr(self, key)
             # if its an array, merge the arrays
@@ -87,7 +87,7 @@ class Race:
             "size": self.size,
             "darkvision": self.darkvision,
             "resistance": self.resistance,
-            "spells": sorted(self.spells),
+            "spells": sorted([s for (s, l) in self.spells]),
             "spellMod": self.spellMod
         }
 

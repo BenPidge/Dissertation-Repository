@@ -52,26 +52,27 @@ class ChrCrossover(Crossover):
         :return: a new chromosome
         """
         # randomly allocate the class, race and background from one parent
-        # make adjustable for over 2 parents, jic
-        # consider a case where parents have one of those in common - look into breeding between the suboptions of it
+        print("breed")
         filters = dict({"Race": None, "Class": None, "Background": None,
                         "Equipment": [], "Spells": [], "Skills": [], "Proficiencies": [], "Languages": []})
         parentsNum = len(parents)
-        # counts the amount of each element within the parents, to identify matching elements between all parents
-        # if these elements are matching, it shows further breeding between the subelements are needed
-        elements = dict({"Race": (Counter([parent.race.name for parent in parents]),
-                                    [parent.race for parent in parents]),
-                         "Class": (Counter([parent.chrClass.name for parent in parents]),
-                                    [parent.chrClass for parent in parents]),
-                         "Background": (Counter([parent.background.name for parent in parents]),
-                                            [parent.background for parent in parents])})
+        elements = dict({"Race": [parent.character.race for parent in parents],
+                         "Class": [parent.character.chrClass for parent in parents],
+                         "Background": [parent.character.background for parent in parents]})
 
-        for key, (counter, objs) in elements.items():
+        for key, objs in elements.items():
             parentIndex = np.random.randint(0, parentsNum)
-            filters[key] = parents[parentIndex]
+            filters[key] = objs[parentIndex].name
             parentInfo = objs[parentIndex].get_data()
             for sub_element in ["Equipment", "Spells", "Skills", "Proficiencies", "Languages"]:
                 filters[sub_element] += parentInfo.get(sub_element.lower(), [])
-                
-        return ChromosomeController.build_chromosome(filters)
+
+        filters["Primary"] = parents[0].archs[0]
+        if parents[0].archs[1] is not None:
+            filters["Secondary"] = parents[0].archs[1]
+
+        print(filters)
+        print("\n")
+        chromosome = ChromosomeController.build_chromosome(filters)
+        return chromosome
 

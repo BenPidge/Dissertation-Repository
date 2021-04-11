@@ -15,6 +15,7 @@ class CharacterReview:
     controller = None
     selector = None
     chrComboBox = None
+    data = None
 
     def __init__(self):
         """
@@ -34,12 +35,28 @@ class CharacterReview:
         """
         self.controller = controller
         self.chrComboBox = self.centre.findChild(QComboBox, "chrComboBox")
+        self.define_data()
         radar_view = self.create_web_view("radarBox")
         self.radar_chart(radar_view)
         viewSheetBtn = self.centre.findChild(QPushButton, "sheetBtn")
         viewSheetBtn.clicked.connect(partial(self.view_sheet))
 
+    def define_data(self):
+        headings = list()
+        counter = 1
+        for chromosome in ChromosomeController.nondominatedFront:
+            name = str(counter) + ". " + chromosome.character.chrClass.name + " " + chromosome.character.race.name
+            self.chrComboBox.addItem(name)
+            for tag in chromosome.tags:
+                headings.append({"Character": name, "Tag": tag[0], "Weighting": tag[2]})
+            counter += 1
+        self.data = pd.DataFrame(headings)
+
+
     def view_sheet(self):
+        """
+        Allows the user to view a character sheet.
+        """
         charName = self.chrComboBox.currentText()
         chromosome = ChromosomeController.nondominatedFront[int(charName.split(".")[0]) - 1]
         self.controller.load_character_sheet(chromosome)
@@ -58,52 +75,53 @@ class CharacterReview:
         widget.setLayout(hbox)
         return webview
 
+    def slope_graph(self):
+        chart = alt.Chart(self.data).mark_line(point=True).encode(
+            x="Tag",
+            y="Weighting",
+            color="Character:N"
+        ).properties(
+            title="Characters Compared",
+            width=350,
+            height=350
+        ).interactive()
+        return chart
+
     def radar_chart(self, widget):
         """
         Creates a radar chart for a chromosome.
         :param widget: the widget to place the radar chart into
         :type widget: QWidget
         """
-        headings = list()
-        counter = 1
-        for chromosome in ChromosomeController.nondominatedFront:
-            name = str(counter) + ". " + chromosome.character.chrClass.name + " " + chromosome.character.race.name
-            self.chrComboBox.addItem(name)
-            for tag in chromosome.tags:
-                headings.append({"Character": name, "key": tag[0], "value": tag[2], "category": 0})
-            counter += 1
-
         chromosome = ChromosomeController.nondominatedFront[0]
         firstName = "1. " + chromosome.character.chrClass.name + " " + chromosome.character.race.name
         self.selector = alt.selection_single(encodings=['y'], init={'y': firstName})
 
-        data = pd.DataFrame(headings)
-        chart = alt.Chart(data).mark_bar(size=20, angle=20).encode(
-            x="key",
-            y="value"
+        chart = alt.Chart(self.data).mark_bar(size=20, angle=20).encode(
+            x="Tag",
+            y="Weighting",
+            color="Tag:N"
         ).properties(
             title="Character Tags",
             width=200,
             height=200
         ).transform_filter(self.selector)
 
-        result = chart & self.select_radar()
+        bar_charts = alt.vconcat(chart, self.select_radar())
+        result = alt.hconcat(bar_charts, self.slope_graph()).resolve_scale(color='independent')
+        result = result.configure_view(fill='#C6EAF9').configure_legend(
+            orient='left',
+            padding=5, cornerRadius=5,
+            strokeColor='black', fillColor='#BBBBBB', strokeWidth=2,
+            labelColor='#1212DE', titleColor='#1212DE'
+        )
         self.controller.load_chart(widget, result)
 
     def select_radar(self):
         """
         Creates a chart that allows you to select which chromosome to view the radar chart of.
         """
-        data = list()
-        counter = 1
-        for chromosome in ChromosomeController.nondominatedFront:
-            name = str(counter) + ". " + chromosome.character.chrClass.name + " " + chromosome.character.race.name
-            for tag in chromosome.tags:
-                data.append({"Character": name, "Tag": tag[0], "Weighting": tag[2]})
-            counter += 1
-
-        data = pd.DataFrame(data)
-        chart = alt.Chart(data).mark_bar(size=20).encode(
+        chart = alt.Chart(self.data).mark_bar(size=20).encode(
             x="Weighting",
             y=alt.Y("Character:N", sort="-x"),
             color=alt.condition(self.selector, alt.value("Gold"), "Tag:N")

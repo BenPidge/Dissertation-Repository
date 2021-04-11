@@ -255,14 +255,20 @@ def create_ability_scores(priorities, filters, race_additions):
             abilityScores.update({ability: min_val})
             availablePoints -= convert_score_to_points(min_val)
 
-    if availablePoints < 0:
-        print("Invalid build")
-    elif availablePoints > 0:
-        while availablePoints > 0:
-            for ability in abilityPriorities:
-                score = abilityScores[ability]
-                score, availablePoints = attempt_score_increase(score, availablePoints, filters[ability][1])
+    # if ability score requirements are too high, reduce them
+    while availablePoints < 0:
+        for ability in abilityPriorities:
+            score = abilityScores[ability]
+            if score > 8:
+                score -= 1
+                availablePoints += (convert_score_to_points(score+1) - convert_score_to_points(score))
                 abilityScores[ability] = score
+    # if there are still points available, use them
+    while availablePoints > 0:
+        for ability in abilityPriorities:
+            score = abilityScores[ability]
+            score, availablePoints = attempt_score_increase(score, availablePoints, filters[ability][1])
+            abilityScores[ability] = score
 
     for ability, mod in race_additions.items():
         abilityScores[ability] += mod

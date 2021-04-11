@@ -94,13 +94,14 @@ class Class:
                 proficiencies.append(nextProf)
 
         dataDict = {
-            "name": self.name,
+            "name": self.className,
             "languages": self.languages,
             "skills": skills,
             "proficiencies": proficiencies,
             "equipment": [e.name for e in self.equipment],
-            "spells": [s.name for s in (self.magic.knownSpells + self.magic.preparedSpellOptions)]
         }
+        if self.magic is not None:
+            dataDict.update({"spells": [s.name for s in (self.magic.knownSpells + self.magic.preparedSpellOptions)]})
 
         # remove null data
         for key in dataDict.keys():

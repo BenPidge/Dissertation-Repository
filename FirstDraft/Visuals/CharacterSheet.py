@@ -78,7 +78,8 @@ class CharacterSheet:
             .findChild(QWidget, "scrollAreaWidgetContents_3").setLayout(profVbox)
 
         proficiencies = list(itertools.chain(*self.character.proficiencies.values()))
-        proficiencies = set([prof for prof in proficiencies if prof not in Character.character_skills])
+        proficiencies = set([prof for prof in proficiencies if prof not in
+                             list(itertools.chain(*Character.character_skills))])
         for vbox, data in [[langVbox, set(self.character.languages)],
                            [profVbox, proficiencies]]:
             for dataPiece in data:

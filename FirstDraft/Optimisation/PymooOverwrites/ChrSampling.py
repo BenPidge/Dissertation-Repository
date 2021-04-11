@@ -18,10 +18,9 @@ class ChrSampling(Sampling):
         :type kwargs: dict
         :return: a numpy array holding the chromosomes
         """
-        results = np.full(n_samples, None, np.object_)
+        results = np.full((n_samples, 1), None, np.object_)
         filters = ChromosomeController.constFilters
         for i in range(n_samples):
-            results[i] = ChromosomeController.build_chromosome(filters)
-
+            results[i, 0] = ChromosomeController.build_chromosome(filters)
         return results
 

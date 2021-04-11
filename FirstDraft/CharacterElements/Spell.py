@@ -92,12 +92,18 @@ class Spell:
         :type other: Spell
         :return: a boolean stating whether they're equal
         """
-        return self.name == other.name and self.level == other.level and self.castingTime == other.castingTime \
+        isEqual = False
+        if type(other) is Spell:
+            isEqual = self.name == other.name and self.level == other.level and self.castingTime == other.castingTime \
                     and self.duration == other.duration and self.range == other.range \
                     and self.components == other.components and self.school == other.school \
                     and sorted(self.tags) == sorted(other.tags) and self.description == other.description \
                     and self.damage == other.damage and self.attack == other.attack and self.save == other.save \
                     and self.area == other.area and self.__chrLevel == other.__chrLevel
+        elif type(other) is str:
+            isEqual = self.name == other
+
+        return isEqual
 
     def __lt__(self, other):
         """

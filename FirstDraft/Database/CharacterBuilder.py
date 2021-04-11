@@ -49,10 +49,10 @@ def extract_choice(choice, choice_loc, places_from):
     """
     options = []
     choiceLocLower = choice_loc.lower()
+    choice = choice.replace("'", "''")
     for place in places_from:
         basePlace = place[0].lower() + place[1:]
         place = place.replace("Options", "")
-        choice = choice.replace("'", "''")
 
         call = f"SELECT {basePlace}Id FROM {place}{choice_loc} WHERE {choiceLocLower}Id IN (" \
                f"SELECT {choiceLocLower}Id FROM {choice_loc} WHERE {choiceLocLower}Name='{choice}'))"
@@ -80,7 +80,7 @@ def extract_choice(choice, choice_loc, places_from):
         Db.cursor.execute(call)
         for result in itertools.chain(*Db.cursor.fetchall()):
             options.append(place + ": " + result)
-    return {choice: options}
+    return {choice.replace("''", "'"): options}
 
 
 def option_combos(options, option_counter):
@@ -102,22 +102,23 @@ def option_combos(options, option_counter):
     for nextKey in optionItems:
         nextValues = options[nextKey]
         # if it's an impossible build, return an empty array
-        if len(nextValues) == 0:
-            return []
+        # if len(nextValues) == 0:
+            # return []
 
-        bestOpt = nextValues[0]
-        # for each option in the array of options
-        for nextVal in nextValues:
-            # if the option is valid and better than the current best, replace with this
-            if (nextVal in choicesMade) or (nextVal.split(":")[0] in unmetChoices):
-                if option_counter[nextVal] > option_counter[bestOpt] or (nextVal in choicesMade):
-                    bestOpt = nextVal
-        choicesMade[bestOpt] = choicesMade.get(bestOpt, []) + [nextKey]
-        option_counter[bestOpt] -= 1
-        try:
-            unmetChoices.remove(bestOpt.split(":")[0])
-        except KeyError:
-            pass
+        if len(nextValues) > 0:
+            bestOpt = nextValues[0]
+            # for each option in the array of options
+            for nextVal in nextValues:
+                # if the option is valid and better than the current best, replace with this
+                if (nextVal in choicesMade) or (nextVal.split(":")[0] in unmetChoices):
+                    if option_counter[nextVal] > option_counter[bestOpt] or (nextVal in choicesMade):
+                        bestOpt = nextVal
+            choicesMade[bestOpt] = choicesMade.get(bestOpt, []) + [nextKey]
+            option_counter[bestOpt] -= 1
+            try:
+                unmetChoices.remove(bestOpt.split(":")[0])
+            except KeyError:
+                pass
     return order_outputs(choicesMade)
 
 
@@ -210,17 +211,17 @@ def change_core_filter(filters, element, modifier, character, subset=None):
             parentTable = element.replace('Sub', '')
             Db.cursor.execute(f"SELECT {parentTable}Id FROM {element} "
                               f"WHERE {element.lower()}Name = '{filters[element]}'")
-            sqlCall = sqlCall + f" AND {parentTable}Id=" + Db.cursor.fetchone()[0]
+            sqlCall = sqlCall + f" AND {parentTable}Id=" + str(Db.cursor.fetchone()[0])
         Db.cursor.execute(sqlCall)
         subset = list(itertools.chain(*Db.cursor.fetchall()))
 
     # get the value at the modifier position if there is one, or choose a random one otherwise
     # avoids overwriting const filters
-    if len(set(filters[element]) - set(ChromosomeController.constFilters[element])) == 0:
+    if len(set(filters[element]) - set(ChromosomeController.constFilters.get(element, []))) == 0:
         return filters
     modifier = check_modifier(modifier, subset)
     choice = subset[modifier]
-    while choice in ChromosomeController.constFilters[element]:
+    while choice in ChromosomeController.constFilters.get(element, []):
         modifier = check_modifier(100, subset)  # this is set to 100 to guarantee a new random value
         choice = subset[modifier]
 
@@ -235,13 +236,17 @@ def change_core_filter(filters, element, modifier, character, subset=None):
         oldData["proficiency"] = unmodifiedData.get("proficiencies", [])
         oldData["spell"] = unmodifiedData.get("spells", [])
     elif element == "Class":
+        spells = []
+        if character.chrClass.magic is not None:
+            spells += character.chrClass.magic.knownSpells + character.chrClass.magic.preparedSpellOptions
         oldData.update({"language": character.chrClass.languages, "proficiency": character.chrClass.proficiencies,
-                        "spell": character.chrClass.magic.knownSpells + character.chrClass.magic.preparedSpellOptions})
+                        "spell": spells})
 
-    if "Sub" in element:
+    if "Sub" not in element:
         subId = "IS NULL"
     else:
-        subId = "= " + Db.get_id(choice, element)
+        subId = "= " + str(Db.get_id(choice, element))
+        element = element.replace("Sub", "").capitalize()
 
     newData = dict()
     Db.cursor.execute(f"SELECT {element.lower()}OptionsId, amntToChoose FROM {element}Options "
@@ -250,20 +255,21 @@ def change_core_filter(filters, element, modifier, character, subset=None):
     for (opId, amnt) in results:
         for elem in ["language", "proficiency", "spell"]:
             # find any data linked to the RaceOptions/ClassOptions
-            Db.cursor.execute(f"SELECT {elem}Name FROM {elem.capitalize()} WHERE {elem}Id IN ("
-                              f"SELECT {elem}Id FROM {element}{elem.capitalize()} "
-                              f"WHERE {element.lower()}OptionsId={opId})")
+            if elem == "spell" and element == "Class":
+                Db.cursor.execute(f"SELECT spellName FROM Spell WHERE spellId IN ("
+                                  f"SELECT spellId FROM ClassSpell WHERE magicId IN ("
+                                  f"SELECT magicId FROM Magic WHERE classId={Db.get_id(choice, 'Class')} "
+                                  f"AND subclassId {subId}))")
+            else:
+                Db.cursor.execute(f"SELECT {elem}Name FROM {elem.capitalize()} WHERE {elem}Id IN ("
+                                  f"SELECT {elem}Id FROM {element}{elem.capitalize()} "
+                                  f"WHERE {element.lower()}OptionsId={opId})")
             items = list(set(itertools.chain(*Db.cursor.fetchall())))
             # if this is the data the results are for, add all items if there's no choice, or all items that the old
             # one had if there is - all extra choices will be made during construction
             if len(items) > 0:
-                if elem == "proficiency":
-                    elem = "proficiencies"
-                else:
-                    elem = elem + "s"
-
-                if len(items) > amnt:
-                    chosenItems = [item for item in items if item in oldData[elem]]
+                if amnt is not None and len(items) > amnt:
+                    chosenItems = [item for item in items if item in oldData.get(elem, [])]
                     if len(chosenItems) > amnt:
                         chosenItems = chosenItems[:amnt]
                     newData.setdefault(elem, []).extend(chosenItems)
@@ -273,8 +279,8 @@ def change_core_filter(filters, element, modifier, character, subset=None):
 
     # updates every data piece in the filters to match
     for elem in ["language", "proficiency", "spell"]:
-        filters[elem.capitalize()] = [x for x in filters[elem.capitalize()] if x not in oldData[elem]] \
-                                     + newData[elem]
+        filters[elem.capitalize()] = [x for x in filters.get(elem.capitalize(), []) if x not in oldData.get(elem, [])] \
+                                     + newData.get(elem, [])
     filters[element] = choice
 
     return filters
@@ -292,10 +298,12 @@ def change_spell_filter(character, filters, modifier):
     :return: newly modified filters
     """
     # if the character currently has spells from more than just race
-    currentSpells = filters["Spells"]
-    if character.magic is not None:
+    currentSpells = filters.get("Spells", [])
+    if character.chrClass.magic is not None:
         spells = tuple("'" + s.name.replace("'", "''") + "'" for s in character.magic.knownSpells)
         spells = spells.__str__().replace('"', '')
+        if spells[-2] == ",":
+            spells = spells[:-2] + ")"
 
         # changes only cantrips
         if character.magic.areSpellsPrepared:
@@ -303,23 +311,21 @@ def change_spell_filter(character, filters, modifier):
                               f"spellName NOT IN {spells} AND spellId IN ("
                               f"SELECT spellId FROM ClassSpell WHERE magicId IN ("
                               f"SELECT magicId FROM Magic WHERE classId = "
-                              f"{Db.get_id(character.chrClass.name, 'Class')}))")
+                              f"{str(Db.get_id(character.chrClass.className, 'Class'))}))")
         # changes anything
         else:
             Db.cursor.execute(f"SELECT spellName FROM Spell WHERE spellName NOT IN {spells} AND spellId IN ("
                               f"SELECT spellId FROM ClassSpell WHERE magicId IN ("
                               f"SELECT magicId FROM Magic WHERE classId = "
-                              f"{Db.get_id(character.chrClass.name, 'Class')}))")
+                              f"{str(Db.get_id(character.chrClass.className, 'Class'))}))")
 
         spells = list(set(itertools.chain(*Db.cursor.fetchall())))
         # avoids overwriting const filters
-        if len(set(currentSpells) - set(ChromosomeController.constFilters["Spells"])) == 0:
+        if len(set(currentSpells) - set(ChromosomeController.constFilters.get("Spells", []))) == 0 or len(spells) == 0:
             return filters
-        modifier = check_modifier(modifier, spells)
-        choice = currentSpells[modifier]
-        while choice in ChromosomeController.constFilters["Spells"]:
+        modifier = check_modifier(modifier, currentSpells)
+        while currentSpells[modifier] in ChromosomeController.constFilters.get("Spells", []):
             modifier = check_modifier(100, currentSpells)  # this is set to 100 to guarantee a new random value
-            choice = currentSpells[modifier]
         currentSpells[modifier] = spells[np.random.randint(0, len(spells))]
         filters["Spells"] = currentSpells
 
@@ -333,7 +339,8 @@ def change_spell_filter(character, filters, modifier):
             Db.cursor.execute("SELECT className FROM Class WHERE classId IN ("
                               "SELECT classId FROM Magic WHERE (cantripsKnown > 0 OR amntKnown > 0))")
             classes = list(set(itertools.chain(*Db.cursor.fetchall())))
-            classes.remove(character.chrClass.className)
+            if character.chrClass.className in classes:
+                classes.remove(character.chrClass.className)
             filters = change_core_filter(filters, "Class", modifier, character, classes)
 
     # if they have no spells
@@ -344,14 +351,14 @@ def change_spell_filter(character, filters, modifier):
                               "SELECT raceId FROM RaceOptions WHERE raceOptionsId IN ("
                               "SELECT raceOptionsId FROM RaceSpell))")
             races = list(set(itertools.chain(*Db.cursor.fetchall())))
-            races.remove(character.race.raceName)
+            if character.race.raceName in races:
+                races.remove(character.race.raceName)
             filters = change_core_filter(filters, "Race", modifier, character, races)
         else:
             # change class to one with spells
             Db.cursor.execute("SELECT className FROM Class WHERE classId IN ("
                               "SELECT classId FROM Magic WHERE (cantripsKnown > 0 OR amntKnown > 0))")
             classes = list(set(itertools.chain(*Db.cursor.fetchall())))
-            classes.remove(character.chrClass.className)
             filters = change_core_filter(filters, "Class", modifier, character, classes)
 
     return filters
@@ -369,24 +376,43 @@ def change_equipment_filter(current_equip, filters, modifier):
     :return: newly modified filters
     """
     Db.cursor.execute("SELECT equipOptionId, suboption FROM EquipmentOption WHERE hasChoice = 1 AND classId="
-                      + Db.get_id(filters["Class"], "Class"))
-    for (nextId, suboption) in Db.cursor.fetchall():
-        if suboption is not None:
-            nextId = suboption
-        Db.cursor.execute(f"SELECT equipmentName FROM Equipment WHERE equipmentId IN ("
-                          f"SELECT equipmentId FROM EquipmentIndivOption WHERE equipmentOptionId = {nextId})")
-        results = list(set(itertools.chain(*Db.cursor.fetchall())))
-        swap = None
-        for result in results:
-            if result in current_equip and result not in ChromosomeController.constFilters["Equipment"]:
-                swap = result
-                break
-        if swap is not None:
-            index = filters["Equipment"].index(swap)
-            results.remove(swap)
-            modifier = check_modifier(modifier, results)
-            filters["Equipment"][index] = results[modifier]
+                      + str(Db.get_id(filters["Class"], "Class")))
+    options = Db.cursor.fetchall()
+    option, suboption = options[np.random.randint(0, len(options))]
+    itemsToRemove = []
+
+    # react to the suboption as appropriate
+    if suboption is not None:
+        Db.cursor.execute("SELECT hasChoice FROM EquipmentOption WHERE equipOptionId =" + str(suboption))
+        if Db.cursor.fetchone()[0] == 1:
+            option = suboption
+        else:
+            Db.cursor.execute(f"SELECT equipmentName FROM Equipment WHERE equipmentId IN ("
+                              f"SELECT equipmentId FROM EquipmentIndivOption WHERE equipmentOptionId = {suboption})")
+            itemsToRemove = list(itertools.chain(*Db.cursor.fetchall()))
+
+    # remove the appropriate amount of the item being unselected
+    Db.cursor.execute(f"SELECT equipmentName FROM Equipment WHERE equipmentId IN ("
+                      f"SELECT equipmentId FROM EquipmentIndivOption WHERE equipmentOptionId = {option})")
+    equipmentItems = list(itertools.chain(*Db.cursor.fetchall()))
+    print(equipmentItems)
+    print(current_equip)
+    for equipmentItem in equipmentItems:
+        if equipmentItem in current_equip:
+            Db.cursor.execute("SELECT amnt FROM EquipmentIndivOption WHERE equipmentId="
+                              + str(Db.get_id(equipmentItem, "Equipment")))
+            for x in range(Db.cursor.fetchone()[0]):
+                itemsToRemove.append(equipmentItem)
+            equipmentItems.remove(equipmentItem)
             break
+
+    # update and return the filters, providing no const-filter collisions have been created
+    if len(set(itemsToRemove).intersection(set(ChromosomeController.constFilters.get("Equipment", [])))) == 0 \
+            and len(equipmentItems) > 0:
+        modifier = check_modifier(modifier, equipmentItems)
+        for item in itemsToRemove:
+            filters["Equipment"].remove(item)
+        filters["Equipment"].append(equipmentItems[modifier])
     return filters
 
 
@@ -418,14 +444,14 @@ def change_basic_filter(character, filters, modifier, element, table_name):
         backgroundItems = [prof for prof in character.background.proficiencies
                            if prof not in skillsList]
 
-    if len(set(backgroundItems) - set(ChromosomeController.constFilters[element])) == 0:
+    if len(set(backgroundItems) - set(ChromosomeController.constFilters.get(element, []))) == 0:
         return filters
 
     # if the background provides the correct type of basic filter
     if len(backgroundItems) > 0:
         Db.cursor.execute(f"SELECT {table_name.lower()}Name FROM {table_name} WHERE {table_name.lower()}Id IN ("
                           f"SELECT {table_name.lower()}Id FROM Background{table_name} WHERE backgroundId="
-                          f"{Db.get_id(background, 'Background')})")
+                          f"{str(Db.get_id(background, 'Background'))})")
         results = list(set(itertools.chain(*Db.cursor.fetchall())))
         # adjusts results appropriately
         if element == "Languages":
@@ -436,10 +462,10 @@ def change_basic_filter(character, filters, modifier, element, table_name):
         # if it can make the successful filter change, it does. Otherwise, it continues to the code below
         if len(results) > 0:
             replacedItem = backgroundItems[np.random.randint(0, len(backgroundItems))]
-            while replacedItem in ChromosomeController.constFilters[element]:
+            while replacedItem in ChromosomeController.constFilters.get(element, []):
                 replacedItem = backgroundItems[np.random.randint(0, len(backgroundItems))]
             modifier = check_modifier(modifier, results)
-            filters[element].replace(replacedItem, results[modifier])
+            filters[element][filters[element].index(replacedItem)] = results[modifier]
             return filters
 
     # if the current background cannot perform the change
@@ -469,7 +495,7 @@ def change_background_filter(filters, character, modifier):
     :type modifier: int
     :return: newly modified filters
     """
-    Db.cursor.execute(f"SELECT backgroundName FROM Background WHERE backgroundName != {filters['Background']}")
+    Db.cursor.execute(f"SELECT backgroundName FROM Background WHERE backgroundName != '{filters['Background']}'")
     options = list(itertools.chain(*Db.cursor.fetchall()))
     modifier = check_modifier(modifier, options)
     new_background = options[modifier]
@@ -477,18 +503,18 @@ def change_background_filter(filters, character, modifier):
     # gets everything the background offers
     Db.cursor.execute(f"SELECT proficiencyName FROM Proficiency WHERE proficiencyType = 'Skill' AND proficiencyId IN ("
                       f"SELECT proficiencyId FROM BackgroundProficiency WHERE "
-                      f"backgroundId = {Db.get_id(new_background, 'Background')})")
+                      f"backgroundId = {str(Db.get_id(new_background, 'Background'))})")
     skills = list(itertools.chain(*Db.cursor.fetchall()))
     Db.cursor.execute(f"SELECT proficiencyName FROM Proficiency WHERE proficiencyType = 'Tool' AND proficiencyId IN ("
                       f"SELECT proficiencyId FROM BackgroundProficiency WHERE "
-                      f"backgroundId = {Db.get_id(new_background, 'Background')})")
+                      f"backgroundId = {str(Db.get_id(new_background, 'Background'))})")
     tools = list(itertools.chain(*Db.cursor.fetchall()))
     Db.cursor.execute(f"SELECT languageName FROM Language WHERE languageId IN ("
                       f"SELECT languageId FROM BackgroundLanguage WHERE "
-                      f"backgroundId = {Db.get_id(new_background, 'Background')})")
+                      f"backgroundId = {str(Db.get_id(new_background, 'Background'))})")
     langs = list(itertools.chain(*Db.cursor.fetchall()))
     Db.cursor.execute(f"SELECT skillAmnt, languageAmnt, toolAmnt FROM Background "
-                      f"WHERE backgroundId={Db.get_id(new_background, 'Background')}")
+                      f"WHERE backgroundId={str(Db.get_id(new_background, 'Background'))}")
     skillAmnt, langAmnt, toolAmnt = Db.cursor.fetchone()
 
     # gets all items both the old and new background had, then adds random ones until the background is full
