@@ -62,8 +62,6 @@ def build_chromosome(filters):
 
     # builds a character
     convertedFilters = CharacterBuilder.take_choices(convertedFilters)
-    print("Build_Chromosome")
-    print(convertedFilters)
     newChr = DataConverter.create_character(1, convertedFilters, filters.get("Abilities"))
 
     # extracts the tags for the selected archetypes
@@ -135,11 +133,12 @@ def begin_optimising():
                           f"WHERE archetypeId={Db.get_id(constFilters['Primary'], 'Archetype')}")
         tag_num = int(Db.cursor.fetchone()[0])
 
+    tag_num += 2  # for the magic and health tags
     algorithm = NSGA2(pop_size=10, sampling=ChrSampling.ChrSampling(), crossover=ChrCrossover.ChrCrossover(),
                       mutation=ChrMutation.ChrMutation(), eliminate_duplicates=ChrDuplicates.ChrDuplicates())
-    results = minimize(ChrProblem.ChrProblem(tag_num), algorithm, ("n_gen", 10), seed=1)
+    results = minimize(ChrProblem.ChrProblem(tag_num), algorithm, ("n_gen", 20))
     nondominatedFront.clear()
-    nondominatedFront.extend(list(results.X[np.argsort(results.F[:, 0])]))
+    nondominatedFront.extend(list(itertools.chain(*results.X[np.argsort(results.F[:, 0])])))
 
 
 def begin():

@@ -57,6 +57,7 @@ class Race:
         """
         Extract and apply all subrace data to the race.
         :param subrace: The subrace of this race that was selected.
+        :type subrace: Race
         """
         subraceDict = subrace.get_data()
         subraceDict["spells"] = sorted(subrace.spells)

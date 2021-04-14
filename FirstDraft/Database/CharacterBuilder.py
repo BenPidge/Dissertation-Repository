@@ -225,16 +225,23 @@ def change_core_filter(filters, element, modifier, character, subset=None):
         modifier = check_modifier(100, subset)  # this is set to 100 to guarantee a new random value
         choice = subset[modifier]
 
+    if "Sub" not in element:
+        subId = "IS NULL"
+    else:
+        subId = "= " + str(Db.get_id(choice, element))
+
     # gets the data the current core filter provides
     # subrace is treat the same as race as no race with subraces has a choice outside the subrace
     oldData = dict()
     if element in ["Race", "Subrace"]:
         oldData = character.race.get_data()
+        choice = character.race.raceName
     elif element == "Subclass":
         unmodifiedData = character.chrClass.subclassItems
         oldData["language"] = unmodifiedData.get("languages", [])
         oldData["proficiency"] = unmodifiedData.get("proficiencies", [])
         oldData["spell"] = unmodifiedData.get("spells", [])
+        choice = character.chrClass.className
     elif element == "Class":
         spells = []
         if character.chrClass.magic is not None:
@@ -242,12 +249,7 @@ def change_core_filter(filters, element, modifier, character, subset=None):
         oldData.update({"language": character.chrClass.languages, "proficiency": character.chrClass.proficiencies,
                         "spell": spells})
 
-    if "Sub" not in element:
-        subId = "IS NULL"
-    else:
-        subId = "= " + str(Db.get_id(choice, element))
-        element = element.replace("Sub", "").capitalize()
-
+    element = element.replace("Sub", "").capitalize()
     newData = dict()
     Db.cursor.execute(f"SELECT {element.lower()}OptionsId, amntToChoose FROM {element}Options "
                       f"WHERE {element.lower()}Id={Db.get_id(choice, element)} AND sub{element.lower()}Id {subId}")
@@ -395,12 +397,10 @@ def change_equipment_filter(current_equip, filters, modifier):
     Db.cursor.execute(f"SELECT equipmentName FROM Equipment WHERE equipmentId IN ("
                       f"SELECT equipmentId FROM EquipmentIndivOption WHERE equipmentOptionId = {option})")
     equipmentItems = list(itertools.chain(*Db.cursor.fetchall()))
-    print(equipmentItems)
-    print(current_equip)
     for equipmentItem in equipmentItems:
         if equipmentItem in current_equip:
             Db.cursor.execute("SELECT amnt FROM EquipmentIndivOption WHERE equipmentId="
-                              + str(Db.get_id(equipmentItem, "Equipment")))
+                              + str(Db.get_id(equipmentItem, "Equipment")) + " AND equipmentOptionId=" + str(option))
             for x in range(Db.cursor.fetchone()[0]):
                 itemsToRemove.append(equipmentItem)
             equipmentItems.remove(equipmentItem)
@@ -411,7 +411,9 @@ def change_equipment_filter(current_equip, filters, modifier):
             and len(equipmentItems) > 0:
         modifier = check_modifier(modifier, equipmentItems)
         for item in itemsToRemove:
-            filters["Equipment"].remove(item)
+            # this if statement defends against the thin chance they chose 1 of an item when 2 were available
+            if item in filters["Equipment"]:
+                filters["Equipment"].remove(item)
         filters["Equipment"].append(equipmentItems[modifier])
     return filters
 
@@ -460,12 +462,17 @@ def change_basic_filter(character, filters, modifier, element, table_name):
             results = [prof for prof in results if ((prof not in skillsList) and (prof not in character.proficiencies))]
 
         # if it can make the successful filter change, it does. Otherwise, it continues to the code below
-        if len(results) > 0:
+        if len(results) > 0 and len(set(results) - set(filters[element])) > 0:
             replacedItem = backgroundItems[np.random.randint(0, len(backgroundItems))]
-            while replacedItem in ChromosomeController.constFilters.get(element, []):
+            while replacedItem in ChromosomeController.constFilters.get(element, []) \
+                    or replacedItem not in filters[element]:
                 replacedItem = backgroundItems[np.random.randint(0, len(backgroundItems))]
+
             modifier = check_modifier(modifier, results)
-            filters[element][filters[element].index(replacedItem)] = results[modifier]
+            newItem = results[modifier]
+            while newItem in filters[element]:
+                newItem = results[np.random.randint(0, len(results))]
+            filters[element][filters[element].index(replacedItem)] = newItem
             return filters
 
     # if the current background cannot perform the change
@@ -480,10 +487,10 @@ def change_basic_filter(character, filters, modifier, element, table_name):
     modifier = check_modifier(modifier, options)
     newBackground = options[modifier]
 
-    return change_background_filter(filters, newBackground, character)
+    return change_background_filter(filters, character, modifier, newBackground)
 
 
-def change_background_filter(filters, character, modifier):
+def change_background_filter(filters, character, modifier, new_background=None):
     """
     Modifies the background filter and all filters affecting it, trying to keep them as close to the original
     as possible.
@@ -493,12 +500,15 @@ def change_background_filter(filters, character, modifier):
     :type character: class: `CharacterElements.Character`
     :param modifier: the modifier number produced, used to help randomise adjustment
     :type modifier: int
+    :param new_background: the new background to be set to
+    :type new_background: str, optional
     :return: newly modified filters
     """
-    Db.cursor.execute(f"SELECT backgroundName FROM Background WHERE backgroundName != '{filters['Background']}'")
-    options = list(itertools.chain(*Db.cursor.fetchall()))
-    modifier = check_modifier(modifier, options)
-    new_background = options[modifier]
+    if new_background is None:
+        Db.cursor.execute(f"SELECT backgroundName FROM Background WHERE backgroundName != '{filters['Background']}'")
+        options = list(itertools.chain(*Db.cursor.fetchall()))
+        modifier = check_modifier(modifier, options)
+        new_background = options[modifier]
 
     # gets everything the background offers
     Db.cursor.execute(f"SELECT proficiencyName FROM Proficiency WHERE proficiencyType = 'Skill' AND proficiencyId IN ("

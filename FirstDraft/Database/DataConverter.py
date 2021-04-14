@@ -58,7 +58,7 @@ def create_character(chr_lvl, chr_choices=None, ability_scores=None):
                 else:
                     ability = chrClass.secondAbility.split("/")[0]
 
-            ability_scores[ability][1] = ability_scores[ability][1] - mod
+            ability_scores[ability][0] = ability_scores[ability][0] - mod
             raceAdditions.update({ability: mod})
     else:
         ability_scores = dict()
@@ -301,7 +301,7 @@ def attempt_score_increase(score, available_points, max):
     :type max: int
     :return: the new score and available points
     """
-    while available_points >= 0 and score <= max:
+    while available_points >= 0 and score < max:
         available_points += convert_score_to_points(score)
         score += 1
         available_points -= convert_score_to_points(score)
@@ -470,7 +470,7 @@ def create_class_magic(class_name, class_lvl, subclass_name=""):
     :return: an object representing all the magic in a class
     """
     # retrieves and sets up variables
-    [cantripsKnown, amntKnown, spellsPrepared, knownCalc], spells, spellslots, subclassSpells \
+    [cantripsKnown, amntKnown, spellsPrepared, knownCalc], spells, spellslots \
         = DataExtractor.create_class_magic(class_name, class_lvl, subclass_name)
     spellsPrepared = spellsPrepared == 1
     spellObjects, cantripObjects, selectedSpells = [], [], []
@@ -485,21 +485,10 @@ def create_class_magic(class_name, class_lvl, subclass_name=""):
         else:
             spellObjects.append(nextSpell)
 
-    # adds subclass spells as always prepared spells
-    subclassSpellObjects = []
-    if subclass_name != "":
-        cantripIncl = 0
-        for spell in subclassSpells:
-            nextSpell = Spell.get_spell(spell, class_lvl)
-            subclassSpellObjects.append(nextSpell)
-            if nextSpell.level == 0:
-                cantripIncl += 1
-        Db.cursor.execute("SELECT cantripsKnown FROM Magic WHERE classId="
-                          + str(Db.get_id(class_name, "Class")) + " AND subclassId IS NULL")
-        cantripsKnown -= (Db.cursor.fetchone()[0] + cantripIncl)
-
     # chooses spells
-    selectedSpells = make_choice(cantripsKnown, cantripObjects, class_name) + subclassSpellObjects
+    if subclass_name != "":
+        class_name = subclass_name
+    selectedSpells = make_choice(cantripsKnown, cantripObjects, class_name)
     if spellsPrepared is False:
         selectedSpells += make_choice(amntKnown, spellObjects, class_name)
         params = [spellslots, False, amntKnown, selectedSpells]
@@ -532,12 +521,12 @@ def collect_class_option_data(class_name, class_lvl, subclass_id=-1):
         metadata, options = DataExtractor.class_options_connections(nextId[0], subclass_id)
         if metadata[0] <= class_lvl:
             if metadata[2] == "traits":
-                traits = make_choice(metadata[1], options, class_name)
+                traits += make_choice(metadata[1], options, class_name)
                 traits = choose_trait_option(traits, class_name)
             elif metadata[2] == "proficiencies":
-                proficiencies = make_choice(metadata[1], options, class_name)
+                proficiencies += make_choice(metadata[1], options, class_name)
             else:
-                languages = make_choice(metadata[1], options, class_name)
+                languages += make_choice(metadata[1], options, class_name)
     return traits, proficiencies, languages
 
 

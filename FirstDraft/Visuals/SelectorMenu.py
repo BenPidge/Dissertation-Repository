@@ -1,10 +1,14 @@
+import sys
+import threading
 from functools import partial
+import sqlite3 as sql
 
 from PyQt5 import uic
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QCoreApplication
 from PyQt5.QtWidgets import *
 
-from Database import CoreDatabase as Db
+from Database import CoreDatabase as Db, CoreDatabase, DatabaseSetup, DataExtractor
+from Optimisation import ChromosomeController
 
 
 class SelectorMenu:
@@ -14,6 +18,7 @@ class SelectorMenu:
     abilitySpinners = dict()
     skillCheckBoxes = []
     controller = None
+    thread = None
 
     def __init__(self):
         """
@@ -39,6 +44,7 @@ class SelectorMenu:
         self.setup_spin_boxes()
         self.setup_check_boxes()
         self.setup_advanced_btn()
+        self.centre.findChild(QPushButton, "devMenu").clicked.connect(self.dev_btn_pressed)
         shadowItems = {"graphicsView": QGraphicsView,
                        "graphicsView_2": QGraphicsView,
                        "startProgram": QPushButton}
@@ -126,6 +132,40 @@ class SelectorMenu:
         advFilters.setGraphicsEffect(shadow)
         advFilters.clicked.connect(partial(self.controller.start_advanced_filters_menu))
         self.centre.findChild(QVBoxLayout, "filtersLayout").addWidget(advFilters)
+
+    def dev_btn_pressed(self):
+        """
+        Sets up the threading necessary to access the dev menu.
+        """
+        QApplication.quit()
+        self.window.close()
+        CoreDatabase.complete_setup()
+        self.thread = threading.Thread(target=self.dev_btn)
+        self.thread.start()
+
+    @staticmethod
+    def dev_btn():
+        """
+        Calls the systems reaction to the Dev Menu button being pressed.
+        """
+        CoreDatabase.connection = sql.connect(CoreDatabase.dir_path + "/Resources/ChrDatabase.db")
+        CoreDatabase.cursor = CoreDatabase.connection.cursor()
+        print("Enter which service you'd like to use:\n"
+              "1. Database Setup\n"
+              "2. View Tables\n"
+              "3. General testing\n"
+              "4. Exit")
+        menu = CoreDatabase.int_input("> ")
+        if menu == 1:
+            DatabaseSetup.begin()
+        elif menu == 2:
+            CoreDatabase.view_tables()
+        elif menu == 3:
+            # replace me with whatever needs testing!
+            DataExtractor.begin()
+        else:
+            SystemExit(0)
+        CoreDatabase.complete_setup()
 
     def setup_archetype_dropdowns(self):
         """

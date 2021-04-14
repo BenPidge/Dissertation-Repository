@@ -53,8 +53,9 @@ class Character:
         """
         Calculates the amount of health the character would have.
         """
-        self.health = math.ceil(self.chrClass.hitDice/2) + (self.abilityScores["CON"]//2 - 5)
-        self.health *= self.chrClass.level
+        constMod = self.abilityScores["CON"]//2 - 5
+        self.health = self.chrClass.hitDice + constMod
+        self.health += (self.chrClass.hitDice/2 + 1 + constMod) * (self.chrClass.level - 1)
 
     def setup_armor_class(self):
         """
@@ -62,11 +63,11 @@ class Character:
         """
         for eq in self.chrClass.equipment:
             if eq.armorClass != 0:
-                if eq.name in Equipment.get_tag_group("Armor"):
-                    eq.setup_armor_class(self.abilityScores["DEX"]//2 - 5)
-                    self.armorClass = eq.armorClass
-                else:
+                if "Shield" in eq.name:
                     self.armorClass += eq.armorClass
+                else:
+                    eq.setup_armor_class(self.abilityScores["DEX"] // 2 - 5)
+                    self.armorClass = eq.armorClass
         if self.armorClass == 0:
             self.armorClass = 10 + self.abilityScores["DEX"]//2 - 5
 
@@ -74,6 +75,7 @@ class Character:
         """
         Adds the racial ability score increases to the inputted ability scores.
         :param ability_scores: each ability score, linked as a key to it's current value.
+        :type ability_scores: dict
         :return: a set of complete ability scores for a character
         """
         raceAbilities = self.race.abilityScores.keys()
@@ -191,7 +193,7 @@ class Character:
         # converts the layout of ability scores, then adds them
         abilityLayout = dict()
         for ability, score in self.abilityScores.items():
-            abilityLayout.update({ability: [score, score]})
+            abilityLayout.update({ability: [score, 17]})
         results['Abilities'] = abilityLayout
 
         # gets optional information when appropriate
@@ -212,7 +214,8 @@ class Character:
         :return: a boolean stating whether they're equal
         """
         # compares the base-type class variables
-        isEqual = self.proficiencyBonus == other.proficiencyBonus and self.proficiencies == other.proficiencies and \
+        isEqual = self.proficiencyBonus == other.proficiencyBonus \
+                    and sorted(self.proficiencies) == sorted(other.proficiencies) and \
                     sorted(self.traits) == sorted(other.traits) and sorted(self.languages) == sorted(other.languages) \
                     and self.abilityScores == other.abilityScores
 

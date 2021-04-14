@@ -1,8 +1,9 @@
 import math
+import time
 from functools import partial
 
 from PyQt5 import uic
-from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtCore import Qt, QTimer, QObject, pyqtSignal, QThread
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QScrollArea, QLabel, QGridLayout, QPushButton
 
 from Optimisation import ChromosomeController
@@ -14,6 +15,9 @@ class ConfirmationScreen:
     controller = None
     filterVbox = QVBoxLayout()
     filters = None
+
+    loadingScreenThread = None
+    thread = None
 
     def __init__(self):
         """
@@ -53,20 +57,29 @@ class ConfirmationScreen:
     def confirmed(self):
         """
         Upon the options being confirmed, the two buttons are replaced with a label, the title label is updated
-        and after a short pause, the next menu is loaded.
+        and after the optimisation is complete, the next menu is loaded. This is done by connecting threads.
         """
-        self.centre.findChild(QPushButton, "confirmBtn").hide()
-        self.centre.findChild(QPushButton, "cancelBtn").hide()
-        self.centre.findChild(QLabel, "loadingLabel").show()
-        self.centre.findChild(QLabel, "title").setText("Optimisation & Visualisation Processing")
+        if self.thread is None:
+            # load a new thread and loading screen object
+            self.loadingScreenThread = LoadingScreenThread(self.centre)
+            self.thread = QThread()
 
+            # connect the thread and custom object to one another, set them to call run_optimisation upon completion,
+            # and start the thread
+            self.loadingScreenThread.moveToThread(self.thread)
+            self.thread.started.connect(self.loadingScreenThread.run)
+            self.loadingScreenThread.finished.connect(self.thread.quit)
+            self.thread.finished.connect(self.run_optimisation)
+        self.thread.start()
+
+    def run_optimisation(self):
+        """
+        Updates the screen, runs the optimisation algorithm, then launches the review screen once it's finished.
+        """
+        self.window.show()
         ChromosomeController.set_const_filters(self.controller.filters)
-        ChromosomeController.nondominatedFront.append(ChromosomeController.build_chromosome(self.controller.filters))
-        ChromosomeController.nondominatedFront.append(ChromosomeController.build_chromosome(self.controller.filters))
-        ChromosomeController.nondominatedFront.append(ChromosomeController.build_chromosome(self.controller.filters))
-        # ChromosomeController.begin_optimising()
-        QTimer.singleShot(2000, self.controller.load_character_review)
-
+        ChromosomeController.begin_optimising()
+        self.controller.load_character_review()
 
     def extract_filters(self):
         """
@@ -141,4 +154,29 @@ class ConfirmationScreen:
             nextLabel.setStyleSheet('font: 12pt "Times New Roman"; color: rgb(188, 189, 177);')
             grid.addWidget(nextLabel, math.floor(counter/3), counter % 3, alignment=Qt.AlignCenter)
             counter += 1
+
+
+class LoadingScreenThread(QObject):
+    """
+    An object allowing a thread to be used for the confirmation screen updates.
+    """
+    finished = pyqtSignal()
+    def __init__(self, centre):
+        """
+        Call the parent initialisation, and set the centre variable
+        :param centre: the centre object of the Qt file being threaded
+        :type centre: QtWidget
+        """
+        super().__init__()
+        self.centre = centre
+
+    def run(self):
+        """
+        Runs the thread, which updates the confirmation screen to visually show it is preparing results.
+        """
+        self.centre.findChild(QPushButton, "confirmBtn").hide()
+        self.centre.findChild(QPushButton, "cancelBtn").hide()
+        self.centre.findChild(QLabel, "loadingLabel").show()
+        self.centre.findChild(QLabel, "title").setText("Optimisation & Visualisation Processing")
+        self.finished.emit()
 

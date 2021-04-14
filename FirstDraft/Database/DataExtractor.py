@@ -157,9 +157,16 @@ def create_class_magic(class_name, class_lvl, subclass_name=""):
     [no of cantrips, no of spells, spells prepared boolean, amount of spells known calculation],
     [spell names], (spellslot level: num of spellslot) dictionary
     """
-    Db.cursor.execute(f"SELECT magicId, spellsPrepared, knownCalc, amntKnown, cantripsKnown FROM Magic "
-                      f"WHERE classId={Db.get_id(class_name, 'Class')} AND lvl={class_lvl} AND subclassId IS NULL")
+    if subclass_name != "":
+        subclassCall = "=" + str(Db.get_id(subclass_name, 'Subclass'))
+    else:
+        subclassCall = " IS NULL"
+
+    Db.cursor.execute(f"SELECT magicId, spellsPrepared, knownCalc, amntKnown, cantripsKnown FROM Magic WHERE "
+                      f"classId={Db.get_id(class_name, 'Class')} AND lvl={class_lvl} AND subclassId{subclassCall}")
     magicId, spellsPrepared, knownCalc, amntKnown, cantripsKnown = Db.cursor.fetchone()
+    if subclass_name != "":
+        spellsPrepared = False
 
     Db.cursor.execute(f"SELECT spellslotLvl, amount FROM ClassSpellslot WHERE magicId={str(magicId)}")
     spellslots = dict()
@@ -167,21 +174,7 @@ def create_class_magic(class_name, class_lvl, subclass_name=""):
         spellslots.update({pair[0]: pair[1]})
 
     spells = get_names_from_connector("Magic", "Spell", magicId)
-
-    subclassSpells = []
-    if subclass_name != "":
-        Db.cursor.execute(f"SELECT magicId, spellsPrepared, knownCalc, amntKnown FROM Magic WHERE "
-                          f"classId={Db.get_id(class_name, 'Class')} AND lvl={class_lvl} AND "
-                          f"subclassId={Db.get_id(subclass_name, 'Subclass')}")
-        magicId, spellsPrepared, knownCalc, amntKnown = Db.cursor.fetchone()
-
-        Db.cursor.execute(f"SELECT spellslotLvl, amount FROM ClassSpellslot WHERE magicId= + {str(magicId)}")
-        for pair in Db.cursor.fetchall():
-            spellslots.update({pair[0]: pair[1]})
-
-        subclassSpells = get_names_from_connector("Magic", "Spell", magicId)
-        subclassSpells = [spell for spell in subclassSpells if spell not in spells]
-    return [cantripsKnown, amntKnown, spellsPrepared, knownCalc], spells, spellslots, subclassSpells
+    return [cantripsKnown, amntKnown, spellsPrepared, knownCalc], spells, spellslots
 
 
 def class_options_connections(class_options_id, subclass_id=-1):
@@ -330,22 +323,18 @@ def begin():
     """
     Begins the use of the data extraction.
     """
-    for x in ["Barbarian", "Bard", "Cleric", "Druid", "Fighter", "Monk", "Paladin", "Ranger", "Rogue", "Sorcerer", "Warlock", "Wizard"]:
-        metadata, spells, spellslots, subSpells = create_class_magic(x, 1)
-        print(x)
-        print(metadata)
-        print("Spells: " + ", ".join(spells))
-        for pair in list(spellslots.items()):
-            print(f"They have {pair[1]} {pair[0]}st level spellslots")
-        print("\n")
 
-    metadata, spells, spellslots, subSpells = create_class_magic("Cleric", 1, "Light Domain")
-    print("Light Domain")
-    print(metadata)
-    print("Spells: " + ", ".join(spells))
-    for pair in list(spellslots.items()):
-        print(f"They have {pair[1]} {pair[0]}st level spellslots")
-    print("\n")
-
-    spell_info("Ensnaring Strike")
+    Db.cursor.execute("SELECT * FROM Magic WHERE subclassId=" + str(Db.get_id("Nature Domain", "Subclass")))
+    print(Db.cursor.fetchall())
+    Db.cursor.execute("SELECT classOptionsId, amntToChoose FROM ClassOptions WHERE subclassId="
+                      + str(Db.get_id("Nature Domain", "Subclass")))
+    res = Db.cursor.fetchall()
+    print(res)
+    call = "SELECT proficiencyName FROM Proficiency WHERE proficiencyId IN " \
+           "(SELECT proficiencyId FROM ClassProficiency WHERE classOptionsId IN ("
+    for r in res:
+        call += str(r[0]) + ", "
+    call = call[:-2] + "))"
+    Db.cursor.execute(call)
+    print(Db.cursor.fetchall())
 

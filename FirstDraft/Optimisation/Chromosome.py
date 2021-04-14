@@ -76,7 +76,7 @@ class Chromosome:
         Returns the tag fitness values in the order they're stored.
         :return: the tag fitness values, in a list
         """
-        weights = []
+        weights = [self.health[1], self.magic[1]]
         for (_, _, fitness) in self.tags:
             weights.append(fitness)
         return weights
@@ -188,6 +188,7 @@ class Chromosome:
         """
         Pulls all information linked to the GenericTag table from each archetype tag, and monitors how often
         it is used in the selected spells, equipment and traits.
+        :return: the list information of all generic tags
         """
         # stores a set of the tags relevant to the selected archetype(s)
         archetypeTags = set()
@@ -263,9 +264,6 @@ class Chromosome:
 
         # compares the health and magic
         isEqual = isEqual and self.health == other.health and self.magic == other.magic
-
-        # compares character objects
-        isEqual = isEqual and self.character == other.character
 
         return isEqual
 

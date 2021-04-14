@@ -52,7 +52,6 @@ class ChrCrossover(Crossover):
         :return: a new chromosome
         """
         # randomly allocate the class, race and background from one parent
-        print("breed")
         filters = dict({"Race": None, "Class": None, "Background": None,
                         "Equipment": [], "Spells": [], "Skills": [], "Proficiencies": [], "Languages": []})
         parentsNum = len(parents)
@@ -71,8 +70,6 @@ class ChrCrossover(Crossover):
         if parents[0].archs[1] is not None:
             filters["Secondary"] = parents[0].archs[1]
 
-        print(filters)
-        print("\n")
         chromosome = ChromosomeController.build_chromosome(filters)
         return chromosome
 

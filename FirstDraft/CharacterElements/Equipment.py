@@ -49,6 +49,8 @@ class Equipment:
         else:
             self.dice = None
         self.armorClass = armor_class
+        if str(armor_class)[0] == "+":
+            self.armorClass = int(armor_class[1:])
         self.strLimit = str_limit
         self.weight = weight
         self.value = value
@@ -152,6 +154,8 @@ def get_equipment(equipment_name):
 def get_tag_group(tag):
     """
     Returns a specified tag array from the tagGroups class variable
+    :param tag: the tag to get the group for
+    :type tag: str
     :return an array of strings
     """
     return Equipment.tagGroups.get(tag)

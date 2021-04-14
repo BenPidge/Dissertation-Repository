@@ -26,13 +26,13 @@ class Class:
         :param hit_dice: The hit dice the class gains at every level, and therefore it's health increase per level.
         :type hit_dice: int
         :param magic: A Magic object representing all spell-related elements of the class.
-        :type magic: object, optional
+        :type magic: class: `CharacterElements.Magic`, optional
         :param languages: The languages gained from the class.
         :type languages: list, optional
         :param level: The amount of levels the character currently has in this class.
         :type level: int, optional
         :param subclass: A Class object representing the subclass of the current class.
-        :type subclass: object, optional
+        :type subclass: Subclass, optional
         """
         if languages is None:
             languages = []
@@ -58,6 +58,7 @@ class Class:
         """
         Extract and apply all subclass data to the class.
         :param subclass: The subclass of the current class selected.
+        :type subclass: Subclass
         """
         self.name = subclass.name + " " + self.name
         self.subclassItems = subclass.get_data()
@@ -180,7 +181,7 @@ class Subclass:
         :param traits: an array of trait (name, desc) pairs
         :type traits: list
         :param magic: a magic object, representing their magic capabilities
-        :type magic: object
+        :type magic: class: `CharacterElements.Magic`
         :param languages: an array of language names
         :type languages: list
         :param proficiencies: an array of proficiency names

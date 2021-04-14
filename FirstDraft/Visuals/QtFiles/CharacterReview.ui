@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1349</width>
-    <height>591</height>
+    <width>1355</width>
+    <height>905</height>
    </rect>
   </property>
   <property name="palette">
@@ -78,21 +78,21 @@
    <string>Character Review</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <widget class="QWidget" name="radarBox" native="true">
+   <widget class="QWidget" name="main" native="true">
     <property name="geometry">
      <rect>
       <x>0</x>
-      <y>0</y>
-      <width>1349</width>
-      <height>521</height>
+      <y>10</y>
+      <width>1351</width>
+      <height>621</height>
      </rect>
     </property>
    </widget>
    <widget class="QPushButton" name="sheetBtn">
     <property name="geometry">
      <rect>
-      <x>595</x>
-      <y>520</y>
+      <x>600</x>
+      <y>630</y>
       <width>171</width>
       <height>31</height>
      </rect>
@@ -115,7 +115,7 @@ color: rgb(255, 255, 255);</string>
     <property name="geometry">
      <rect>
       <x>400</x>
-      <y>527</y>
+      <y>637</y>
       <width>151</width>
       <height>21</height>
      </rect>
@@ -127,13 +127,67 @@ color: rgb(255, 255, 255);</string>
      <string/>
     </property>
    </widget>
+   <widget class="QWidget" name="histogram" native="true">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>660</y>
+      <width>1351</width>
+      <height>211</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QLabel" name="archTitle">
+    <property name="geometry">
+     <rect>
+      <x>790</x>
+      <y>630</y>
+      <width>141</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>Old English Text MT</family>
+      <pointsize>20</pointsize>
+     </font>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">color: rgb(255, 255, 255);</string>
+    </property>
+    <property name="text">
+     <string>Optimising:</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="archLabel">
+    <property name="geometry">
+     <rect>
+      <x>950</x>
+      <y>630</y>
+      <width>211</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>NSimSun</family>
+      <pointsize>12</pointsize>
+     </font>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">color: rgb(255, 255, 255);</string>
+    </property>
+    <property name="text">
+     <string>TextLabel</string>
+    </property>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1349</width>
+     <width>1355</width>
      <height>21</height>
     </rect>
    </property>

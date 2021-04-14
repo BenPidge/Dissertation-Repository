@@ -703,6 +703,35 @@ font: 14pt &quot;MS Shell Dlg 2&quot;;</string>
     </property>
     <layout class="QVBoxLayout" name="filtersLayout"/>
    </widget>
+   <widget class="QPushButton" name="devMenu">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>101</width>
+      <height>91</height>
+     </rect>
+    </property>
+    <property name="autoFillBackground">
+     <bool>false</bool>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">background-color: rgba(255, 255, 255, 0);</string>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+    <property name="icon">
+     <iconset>
+      <normaloff>../Images/DevMenu.png</normaloff>../Images/DevMenu.png</iconset>
+    </property>
+    <property name="iconSize">
+     <size>
+      <width>90</width>
+      <height>90</height>
+     </size>
+    </property>
+   </widget>
    <zorder>graphicsView_2</zorder>
    <zorder>graphicsView</zorder>
    <zorder>primaryArchetypes</zorder>
@@ -719,6 +748,7 @@ font: 14pt &quot;MS Shell Dlg 2&quot;;</string>
    <zorder>label_5</zorder>
    <zorder>error</zorder>
    <zorder>verticalLayoutWidget</zorder>
+   <zorder>devMenu</zorder>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
