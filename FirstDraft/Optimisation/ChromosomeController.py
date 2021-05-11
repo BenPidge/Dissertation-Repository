@@ -1,3 +1,4 @@
+import copy
 import itertools
 
 from pymoo.factory import get_termination, np
@@ -62,7 +63,17 @@ def build_chromosome(filters):
 
     # builds a character
     convertedFilters = CharacterBuilder.take_choices(convertedFilters)
-    newChr = DataConverter.create_character(1, convertedFilters, filters.get("Abilities"))
+    abilities = filters.get("Abilities", dict())
+    for ability, [min_val, max_val] in constFilters.get("Abilities", dict()).items():
+        currentAbilityFilter = abilities.get(ability, [min_val, max_val])
+        if currentAbilityFilter[0] < min_val:
+            abilities[ability][0] = min_val
+
+        if currentAbilityFilter[1] > max_val:
+            abilities[ability][1] = max_val
+        elif currentAbilityFilter[1] < min_val:
+            abilities[ability][1] = min_val
+    newChr = DataConverter.create_character(1, convertedFilters, abilities)
 
     # extracts the tags for the selected archetypes
     primaryArch = filters["Primary"]

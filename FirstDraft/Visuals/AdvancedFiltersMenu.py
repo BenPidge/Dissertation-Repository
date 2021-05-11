@@ -163,6 +163,8 @@ class AdvancedFiltersMenu:
             text = holder.itemAt(i).widget().currentText()
             if text in languages:
                 languages.remove(text)
+            if i >= amnt:
+                holder.itemAt(i).widget().setParent(None)
         for x in range(amnt - holder.count()):
             nextBox = QComboBox()
             nextBox.addItems(["Necessary Language"] + languages)

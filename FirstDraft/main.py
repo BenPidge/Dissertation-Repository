@@ -1,5 +1,5 @@
-from Database import DatabaseSetup, DataExtractor, CoreDatabase, DataConverter, CharacterBuilder
-from Optimisation import Chromosome, ChromosomeController
+from Database import DataConverter
+from Optimisation import ChromosomeController
 from Visuals import VisualsController
 
 
@@ -16,7 +16,6 @@ def begin():
     """
     DataConverter.create_all_equipment()
     visuals.begin()
-    # CoreDatabase.complete_setup()
 
 
 begin()

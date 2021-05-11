@@ -1,3 +1,5 @@
+import copy
+
 import numpy as np
 from pymoo.model.sampling import Sampling
 
@@ -19,7 +21,7 @@ class ChrSampling(Sampling):
         :return: a numpy array holding the chromosomes
         """
         results = np.full((n_samples, 1), None, np.object_)
-        filters = ChromosomeController.constFilters
+        filters = copy.deepcopy(ChromosomeController.constFilters)
         for i in range(n_samples):
             results[i, 0] = ChromosomeController.build_chromosome(filters)
         return results

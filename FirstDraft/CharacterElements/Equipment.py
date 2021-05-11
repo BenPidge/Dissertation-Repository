@@ -129,6 +129,13 @@ class Equipment:
             output += f"It has a range of {self.range[0]}, or {self.range[1]} with disadvantage."
         return output
 
+    def __hash__(self):
+        """
+        Hashes the object based on it's name and description.
+        :return: the hashed value produced
+        """
+        return hash(str(self.name) + str(self.description))
+
 
 def get_all_equipment():
     """

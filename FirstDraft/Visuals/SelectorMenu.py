@@ -253,8 +253,7 @@ class SelectorMenu:
         layout.addWidget(maxSpin)
         return minSpin, maxSpin
 
-    @staticmethod
-    def check_ability_boundaries(spinners):
+    def check_ability_boundaries(self, spinners):
         """
         Checks if the lowest abilities meet the point-buy maximum.
         :param spinners: the name and value of the lowest value spinners, in a 2D array
@@ -295,8 +294,21 @@ class SelectorMenu:
                     valid = False
 
         if valid is True:
-            valid = pointsLeft >= 0
+            valid = pointsLeft >= 0 and self.check_ability_overlaps()
         if valid is False:
             return "Abilities set too high."
         else:
             return ""
+
+    def check_ability_overlaps(self):
+        """
+        Checks if there are any ability overlaps, where the minimum is above the maximum
+        :return: a boolean stating whether there's an overlap
+        """
+        valid = True
+        for (_, [minVal, maxVal]) in self.abilitySpinners.items():
+            if minVal.value() > maxVal.value():
+                valid = False
+
+        return valid
+

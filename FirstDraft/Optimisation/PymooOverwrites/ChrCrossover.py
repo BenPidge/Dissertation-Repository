@@ -62,6 +62,8 @@ class ChrCrossover(Crossover):
         for key, objs in elements.items():
             parentIndex = np.random.randint(0, parentsNum)
             filters[key] = objs[parentIndex].name
+            if key == "Race":
+                filters = ChrCrossover.get_ability_score(filters, parents[parentIndex].character.abilityScores)
             parentInfo = objs[parentIndex].get_data()
             for sub_element in ["Equipment", "Spells", "Skills", "Proficiencies", "Languages"]:
                 filters[sub_element] += parentInfo.get(sub_element.lower(), [])
@@ -72,4 +74,21 @@ class ChrCrossover(Crossover):
 
         chromosome = ChromosomeController.build_chromosome(filters)
         return chromosome
+
+    @staticmethod
+    def get_ability_score(filters, abilities):
+        """
+        Gets the ability score filter from the abilities provided.
+        :param filters: the current filters applied
+        :type filters: dict
+        :param abilities: the abilities to match
+        :type abilities: dict
+        :return: the new filter, including the abilities
+        """
+        abilityFilter = dict()
+        for ability, score in abilities.items():
+            abilityFilter[ability] = [score, score]
+
+        filters["Abilities"] = abilityFilter
+        return filters
 

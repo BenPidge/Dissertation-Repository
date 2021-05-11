@@ -1,4 +1,5 @@
 import itertools
+import math
 from functools import partial
 
 from PyQt5 import uic
@@ -64,7 +65,7 @@ class CharacterSheet:
         # AC, speed & health
         for datatype, data in [["armorClass", str(self.character.armorClass)],
                                ["speed", str(self.character.race.speed)],
-                               ["health", str(self.character.health)]]:
+                               ["health", str(math.trunc(self.character.health))]]:
             if len(str(data)) == 1:
                 data = " " + data
             self.centre.findChild(QLabel, datatype + "Val").setText(data)
@@ -249,7 +250,7 @@ class CharacterSheet:
             checkBoxes = QHBoxLayout()
             for i in range(amnt):
                 checkBoxes.addWidget(QCheckBox(""))
-            spellslotHolder.addItem(checkBoxes, counter, 0)
+            spellslotHolder.addLayout(checkBoxes, counter, 1)
             counter += 1
 
 
@@ -286,11 +287,11 @@ class CharacterSheet:
                 for spell in spells:
                     # calculate the attack bonus or save DC of a spell
                     spellModifier = self.character.abilityScores[ability] // 2 - 5 + self.character.proficiencyBonus
-                    if spell.attack is not None:
-                        attackSave = "+" + str(spellModifier) + " " + spell.attack
-                    elif spell.save is not None:
+                    if spell.save not in [None, "None"]:
                         spellModifier += 8
                         attackSave = "DC" + str(spellModifier) + " " + spell.save
+                    elif spell.attack not in [None, "None"]:
+                        attackSave = "+" + str(spellModifier) + " " + spell.attack
                     else:
                         attackSave = None
 

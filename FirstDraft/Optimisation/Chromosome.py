@@ -207,7 +207,7 @@ class Chromosome:
         # they have easily adjustable data value weightings, with the base values typically being
         # their maximum dice values, plus 1 for every dice above 1, to represent the benefit of more dice
         equipment, spells, traits = [], [], []
-        for eq in self.character.chrClass.equipment:
+        for eq in set(self.character.chrClass.equipment):
             if eq.armorClass != 0:
                 equipVal = (eq.armorClass - 10)/4.0
             elif eq.dice is not None:

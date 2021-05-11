@@ -58,15 +58,15 @@ def create_character(chr_lvl, chr_choices=None, ability_scores=None):
                 else:
                     ability = chrClass.secondAbility.split("/")[0]
 
-            ability_scores[ability][0] = ability_scores[ability][0] - mod
+            ability_scores[ability][0] -= mod
+            ability_scores[ability][1] -= mod
             raceAdditions.update({ability: mod})
     else:
         ability_scores = dict()
         for score in ["STR", "DEX", "CON", "INT", "WIS", "CHA"]:
             ability_scores.update({score: [8, 15]})
 
-    abilityScores = create_ability_scores((chrClass.mainAbility, chrClass.secondAbility), ability_scores,
-                                          raceAdditions)
+    abilityScores = create_ability_scores((chrClass.mainAbility, chrClass.secondAbility), ability_scores)
     return Character.Character(race, chrClass, background, abilityScores)
 
 
@@ -228,7 +228,7 @@ def create_equipment(class_name):
     return equipment
 
 
-def create_ability_scores(priorities, filters, race_additions):
+def create_ability_scores(priorities, filters):
     """
     Creates ability scores using point buy, and the inputted priorities.
     :param priorities: a (primary, secondary) pair of the two main priorities
@@ -263,15 +263,18 @@ def create_ability_scores(priorities, filters, race_additions):
                 score -= 1
                 availablePoints += (convert_score_to_points(score+1) - convert_score_to_points(score))
                 abilityScores[ability] = score
+    # if abilities exceed their maximum, reduce them
+    for ability in abilityPriorities:
+        if abilityScores[ability] > filters[ability][1]:
+            availablePoints += (
+                        convert_score_to_points(abilityScores[ability]) - convert_score_to_points(filters[ability][1]))
+            abilityScores[ability] = filters[ability][1]
     # if there are still points available, use them
-    while availablePoints > 0:
-        for ability in abilityPriorities:
-            score = abilityScores[ability]
-            score, availablePoints = attempt_score_increase(score, availablePoints, filters[ability][1])
-            abilityScores[ability] = score
+    for ability in abilityPriorities:
+        score = abilityScores[ability]
+        score, availablePoints = attempt_score_increase(score, availablePoints, filters[ability][1])
+        abilityScores[ability] = score
 
-    for ability, mod in race_additions.items():
-        abilityScores[ability] += mod
     return abilityScores
 
 
@@ -290,25 +293,21 @@ def convert_score_to_points(score):
         return score - 8
 
 
-def attempt_score_increase(score, available_points, max):
+def attempt_score_increase(score, available_points, max_val):
     """
     Attempts to increase the score as much as possible.
     :param score: the current score to increase
     :type score: int
     :param available_points: the amount of available points left
     :type available_points: int
-    :param max: the maximum value the score can be
-    :type max: int
+    :param max_val: the maximum value the score can be
+    :type max_val: int
     :return: the new score and available points
     """
-    while available_points >= 0 and score < max:
+    while available_points > 0 and score < max_val and score < 15:
         available_points += convert_score_to_points(score)
         score += 1
         available_points -= convert_score_to_points(score)
-
-    available_points += convert_score_to_points(score)
-    score -= 1
-    available_points -= convert_score_to_points(score)
     return score, available_points
 
 
